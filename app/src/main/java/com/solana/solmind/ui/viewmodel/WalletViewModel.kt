@@ -2,7 +2,9 @@ package com.solana.solmind.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.solana.solmind.data.model.AccountMode
 import com.solana.solmind.data.model.SolanaWallet
+import com.solana.solmind.data.preferences.AccountModeManager
 import com.solana.solmind.repository.LedgerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class WalletViewModel @Inject constructor(
-    private val repository: LedgerRepository
+    private val repository: LedgerRepository,
+    private val accountModeManager: AccountModeManager
 ) : ViewModel() {
     
     private val _wallets = MutableStateFlow<List<SolanaWallet>>(emptyList())
@@ -25,6 +28,8 @@ class WalletViewModel @Inject constructor(
     
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+    
+    val currentAccountMode = accountModeManager.currentAccountMode
     
     fun loadWallets() {
         viewModelScope.launch {

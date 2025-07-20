@@ -2,9 +2,11 @@ package com.solana.solmind.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.solana.solmind.data.model.AccountMode
 import com.solana.solmind.data.model.LedgerEntry
 import com.solana.solmind.data.model.TransactionCategory
 import com.solana.solmind.data.model.TransactionType
+import com.solana.solmind.data.preferences.AccountModeManager
 import com.solana.solmind.repository.LedgerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,7 +48,8 @@ data class ChatMessage(
 
 @HiltViewModel
 class AddEntryViewModel @Inject constructor(
-    private val repository: LedgerRepository
+    private val repository: LedgerRepository,
+    private val accountModeManager: AccountModeManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(AddEntryUiState())
@@ -54,6 +57,8 @@ class AddEntryViewModel @Inject constructor(
     
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    
+    val currentAccountMode = accountModeManager.currentAccountMode
     
     fun updateAmount(amount: String) {
         val error = validateAmount(amount)
@@ -96,7 +101,10 @@ class AddEntryViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(error = null)
                 
                 val currentState = _uiState.value
-                val suggestion = repository.createEntryFromText(currentState.description)
+                val suggestion = repository.createEntryFromText(
+                    currentState.description, 
+                    accountMode = accountModeManager.getCurrentAccountMode()
+                )
                 
                 suggestion?.let { entry ->
                     _uiState.value = currentState.copy(
@@ -133,6 +141,7 @@ class AddEntryViewModel @Inject constructor(
                     category = currentState.category,
                     type = currentState.transactionType,
                     date = currentState.date,
+                    accountMode = accountModeManager.getCurrentAccountMode(),
                     confidence = currentState.confidence
                 )
                 
@@ -206,7 +215,10 @@ class AddEntryViewModel @Inject constructor(
                 kotlinx.coroutines.delay(1500)
                 
                 // Use existing AI service to analyze the message
-                val suggestion = repository.createEntryFromText(message)
+                val suggestion = repository.createEntryFromText(
+                    message, 
+                    accountMode = accountModeManager.getCurrentAccountMode()
+                )
                 
                 val aiResponse = if (suggestion != null) {
                     // Update the transaction data
@@ -265,6 +277,7 @@ class AddEntryViewModel @Inject constructor(
                     category = TransactionCategory.FOOD_DINING,
                     type = TransactionType.EXPENSE,
                     date = Date(),
+                    accountMode = accountModeManager.getCurrentAccountMode(),
                     confidence = 0.85f
                 )
                 

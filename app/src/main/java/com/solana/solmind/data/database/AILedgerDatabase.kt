@@ -5,16 +5,19 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import android.content.Context
 import com.solana.solmind.data.model.LedgerEntry
 import com.solana.solmind.data.model.SolanaWallet
 import com.solana.solmind.data.model.TransactionCategory
 import com.solana.solmind.data.model.TransactionType
+import com.solana.solmind.data.model.AccountMode
 import java.util.Date
 
 @Database(
     entities = [LedgerEntry::class, SolanaWallet::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -27,13 +30,19 @@ abstract class AILedgerDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AILedgerDatabase? = null
         
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE ledger_entries ADD COLUMN accountMode TEXT NOT NULL DEFAULT 'OFFCHAIN'")
+            }
+        }
+        
         fun getDatabase(context: Context): AILedgerDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AILedgerDatabase::class.java,
                     "ai_ledger_database"
-                ).build()
+                ).addMigrations(MIGRATION_1_2).build()
                 INSTANCE = instance
                 instance
             }
@@ -70,5 +79,15 @@ class Converters {
     @TypeConverter
     fun toTransactionCategory(category: String): TransactionCategory {
         return TransactionCategory.valueOf(category)
+    }
+    
+    @TypeConverter
+    fun fromAccountMode(accountMode: AccountMode): String {
+        return accountMode.name
+    }
+    
+    @TypeConverter
+    fun toAccountMode(accountMode: String): AccountMode {
+        return AccountMode.valueOf(accountMode)
     }
 }

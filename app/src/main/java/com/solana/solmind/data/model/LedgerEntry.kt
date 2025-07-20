@@ -13,6 +13,7 @@ data class LedgerEntry(
     val category: TransactionCategory,
     val type: TransactionType,
     val date: Date,
+    val accountMode: AccountMode = AccountMode.OFFCHAIN,
     val imageUri: String? = null,
     val solanaTransactionHash: String? = null,
     val solanaAddress: String? = null,
@@ -25,6 +26,18 @@ data class LedgerEntry(
 enum class TransactionType {
     INCOME,
     EXPENSE
+}
+
+enum class AccountMode {
+    ONCHAIN,
+    OFFCHAIN;
+    
+    fun getDisplayName(): String {
+        return when (this) {
+            ONCHAIN -> "On-Chain"
+            OFFCHAIN -> "Off-Chain"
+        }
+    }
 }
 
 enum class TransactionCategory {

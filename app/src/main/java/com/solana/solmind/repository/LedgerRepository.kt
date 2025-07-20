@@ -6,6 +6,7 @@ import com.solana.solmind.data.model.LedgerEntry
 import com.solana.solmind.data.model.SolanaWallet
 import com.solana.solmind.data.model.TransactionCategory
 import com.solana.solmind.data.model.TransactionType
+import com.solana.solmind.data.model.AccountMode
 import com.solana.solmind.service.AIService
 import com.solana.solmind.service.SolanaService
 import kotlinx.coroutines.flow.Flow
@@ -24,14 +25,26 @@ class LedgerRepository @Inject constructor(
     // Ledger Entry operations
     fun getAllEntries(): Flow<List<LedgerEntry>> = ledgerDao.getAllEntries()
     
+    fun getEntriesByAccountMode(accountMode: AccountMode): Flow<List<LedgerEntry>> = 
+        ledgerDao.getEntriesByAccountMode(accountMode)
+    
     fun getEntriesByType(type: TransactionType): Flow<List<LedgerEntry>> = 
         ledgerDao.getEntriesByType(type)
+    
+    fun getEntriesByTypeAndAccountMode(type: TransactionType, accountMode: AccountMode): Flow<List<LedgerEntry>> = 
+        ledgerDao.getEntriesByTypeAndAccountMode(type, accountMode)
     
     fun getEntriesByCategory(category: TransactionCategory): Flow<List<LedgerEntry>> = 
         ledgerDao.getEntriesByCategory(category)
     
+    fun getEntriesByCategoryAndAccountMode(category: TransactionCategory, accountMode: AccountMode): Flow<List<LedgerEntry>> = 
+        ledgerDao.getEntriesByCategoryAndAccountMode(category, accountMode)
+    
     fun getEntriesByDateRange(startDate: Date, endDate: Date): Flow<List<LedgerEntry>> = 
         ledgerDao.getEntriesByDateRange(startDate, endDate)
+    
+    fun getEntriesByDateRangeAndAccountMode(startDate: Date, endDate: Date, accountMode: AccountMode): Flow<List<LedgerEntry>> = 
+        ledgerDao.getEntriesByDateRangeAndAccountMode(startDate, endDate, accountMode)
     
     suspend fun getEntryById(id: Long): LedgerEntry? = ledgerDao.getEntryById(id)
     
@@ -51,8 +64,15 @@ class LedgerRepository @Inject constructor(
         endDate: Date
     ): Double = ledgerDao.getTotalAmountByTypeAndDateRange(type, startDate, endDate) ?: 0.0
     
+    suspend fun getTotalAmountByTypeAndDateRangeAndAccountMode(
+        type: TransactionType,
+        startDate: Date,
+        endDate: Date,
+        accountMode: AccountMode
+    ): Double = ledgerDao.getTotalAmountByTypeAndDateRangeAndAccountMode(type, startDate, endDate, accountMode) ?: 0.0
+    
     // AI-powered entry creation
-    suspend fun createEntryFromText(text: String, amount: Double? = null): LedgerEntry {
+    suspend fun createEntryFromText(text: String, amount: Double? = null, accountMode: AccountMode = AccountMode.OFFCHAIN): LedgerEntry {
         val prediction = aiService.categorizeTransaction(text)
         val extractedAmount = amount ?: aiService.extractAmountFromText(text) ?: 0.0
         
@@ -62,6 +82,7 @@ class LedgerRepository @Inject constructor(
             category = prediction.category,
             type = prediction.type,
             date = Date(),
+            accountMode = accountMode,
             confidence = prediction.confidence,
             isAutoDetected = true
         )
@@ -169,6 +190,7 @@ class LedgerRepository @Inject constructor(
             category = category,
             type = type,
             date = if (transaction.blockTime != null) Date(transaction.blockTime * 1000) else Date(),
+            accountMode = AccountMode.ONCHAIN,
             solanaTransactionHash = transaction.signature,
             solanaAddress = userAddress,
             isAutoDetected = true,

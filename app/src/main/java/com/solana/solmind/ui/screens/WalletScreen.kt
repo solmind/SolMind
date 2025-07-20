@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.solana.solmind.data.model.AccountMode
 import com.solana.solmind.data.model.SolanaWallet
 import com.solana.solmind.ui.theme.ExpenseRed
 import com.solana.solmind.ui.theme.IncomeGreen
@@ -37,6 +38,7 @@ fun WalletScreen(
     val wallets by viewModel.wallets.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val currentAccountMode by viewModel.currentAccountMode.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     
     LaunchedEffect(Unit) {
@@ -48,27 +50,31 @@ fun WalletScreen(
             TopAppBar(
                 title = { Text("Solana Wallets") },
                 actions = {
-                    IconButton(
-                        onClick = { viewModel.syncAllWallets() },
-                        enabled = !isLoading
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(Icons.Default.Refresh, contentDescription = "Sync All")
+                    if (currentAccountMode == AccountMode.ONCHAIN) {
+                        IconButton(
+                            onClick = { viewModel.syncAllWallets() },
+                            enabled = !isLoading
+                        ) {
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(Icons.Default.Refresh, contentDescription = "Sync All")
+                            }
                         }
                     }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true }
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Wallet")
+            if (currentAccountMode == AccountMode.ONCHAIN) {
+                FloatingActionButton(
+                    onClick = { showAddDialog = true }
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Wallet")
+                }
             }
         }
     ) { paddingValues ->
@@ -77,42 +83,78 @@ fun WalletScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Error Display
-            error?.let { errorMessage ->
+            if (currentAccountMode == AccountMode.OFFCHAIN) {
+                // Show message for offchain mode
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 ) {
-                    Text(
-                        text = errorMessage,
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-            }
-            
-            // Wallets List
-            if (wallets.isEmpty() && !isLoading) {
-                EmptyWalletsState(
-                    onAddWallet = { showAddDialog = true }
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(wallets) { wallet ->
-                        WalletCard(
-                            wallet = wallet,
-                            onSync = { viewModel.syncWallet(wallet.address) },
-                            onDelete = { viewModel.deleteWallet(wallet.address) },
-                            isLoading = isLoading
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Wallet Management Unavailable",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Switch to Onchain mode to manage your Solana wallets and sync blockchain transactions.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                // Error Display
+                error?.let { errorMessage ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Text(
+                            text = errorMessage,
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+                
+                // Wallets List
+                if (wallets.isEmpty() && !isLoading) {
+                    EmptyWalletsState(
+                        onAddWallet = { showAddDialog = true }
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(wallets) { wallet ->
+                            WalletCard(
+                                wallet = wallet,
+                                onSync = { viewModel.syncWallet(wallet.address) },
+                                onDelete = { viewModel.deleteWallet(wallet.address) },
+                                isLoading = isLoading
+                            )
+                        }
                     }
                 }
             }

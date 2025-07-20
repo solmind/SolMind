@@ -2,8 +2,10 @@ package com.solana.solmind.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.solana.solmind.data.model.AccountMode
 import com.solana.solmind.data.model.LedgerEntry
 import com.solana.solmind.data.model.TransactionType
+import com.solana.solmind.data.preferences.AccountModeManager
 import com.solana.solmind.repository.LedgerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -13,10 +15,21 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val repository: LedgerRepository
+    private val repository: LedgerRepository,
+    private val accountModeManager: AccountModeManager
 ) : ViewModel() {
     
-    val entries = repository.getAllEntries()
+    val currentAccountMode = accountModeManager.currentAccountMode
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = AccountMode.OFFCHAIN
+        )
+    
+    val entries = currentAccountMode
+        .flatMapLatest { accountMode ->
+            repository.getEntriesByAccountMode(accountMode)
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -36,33 +49,47 @@ class HomeViewModel @Inject constructor(
         add(Calendar.MONTH, 1)
     }.time
     
-    val totalIncome = flow {
-        emit(
-            repository.getTotalAmountByTypeAndDateRange(
-                TransactionType.INCOME,
-                currentMonth,
-                nextMonth
-            )
+    val totalIncome = currentAccountMode
+        .flatMapLatest { accountMode ->
+            flow {
+                emit(
+                    repository.getTotalAmountByTypeAndDateRangeAndAccountMode(
+                        TransactionType.INCOME,
+                        currentMonth,
+                        nextMonth,
+                        accountMode
+                    )
+                )
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0.0
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = 0.0
-    )
     
-    val totalExpenses = flow {
-        emit(
-            repository.getTotalAmountByTypeAndDateRange(
-                TransactionType.EXPENSE,
-                currentMonth,
-                nextMonth
-            )
+    val totalExpenses = currentAccountMode
+        .flatMapLatest { accountMode ->
+            flow {
+                emit(
+                    repository.getTotalAmountByTypeAndDateRangeAndAccountMode(
+                        TransactionType.EXPENSE,
+                        currentMonth,
+                        nextMonth,
+                        accountMode
+                    )
+                )
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0.0
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = 0.0
-    )
+    
+    fun setAccountMode(accountMode: AccountMode) {
+        accountModeManager.setAccountMode(accountMode)
+    }
     
     fun refreshData() {
         viewModelScope.launch {

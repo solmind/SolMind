@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.solana.solmind.data.database.AILedgerDatabase
 import com.solana.solmind.data.database.LedgerDao
 import com.solana.solmind.data.database.SolanaWalletDao
+import com.solana.solmind.data.preferences.AccountModeManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,7 +26,7 @@ object DatabaseModule {
             context.applicationContext,
             AILedgerDatabase::class.java,
             "ai_ledger_database"
-        ).build()
+        ).addMigrations(AILedgerDatabase.MIGRATION_1_2).build()
     }
     
     @Provides
@@ -42,5 +43,11 @@ object DatabaseModule {
     @Singleton
     fun provideApplicationContext(@ApplicationContext context: Context): Context {
         return context
+    }
+    
+    @Provides
+    @Singleton
+    fun provideAccountModeManager(@ApplicationContext context: Context): AccountModeManager {
+        return AccountModeManager(context)
     }
 }

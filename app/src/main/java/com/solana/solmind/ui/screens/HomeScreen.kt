@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.solana.solmind.data.model.AccountMode
 import com.solana.solmind.data.model.LedgerEntry
 import com.solana.solmind.data.model.TransactionCategory
 import com.solana.solmind.data.model.TransactionType
@@ -36,6 +37,7 @@ fun HomeScreen(
     val entries by viewModel.entries.collectAsState()
     val totalIncome by viewModel.totalIncome.collectAsState()
     val totalExpenses by viewModel.totalExpenses.collectAsState()
+    val currentAccountMode by viewModel.currentAccountMode.collectAsState()
     val balance = totalIncome - totalExpenses
     
     LazyColumn(
@@ -44,6 +46,40 @@ fun HomeScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        item {
+            // Account Mode Switcher
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        onClick = { viewModel.setAccountMode(AccountMode.OFFCHAIN) },
+                        label = {
+                            Text("Offchain")
+                        },
+                        selected = currentAccountMode == AccountMode.OFFCHAIN,
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        onClick = { viewModel.setAccountMode(AccountMode.ONCHAIN) },
+                        label = {
+                            Text("Onchain")
+                        },
+                        selected = currentAccountMode == AccountMode.ONCHAIN,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+        
         item {
             // Balance Overview Card
             Card(
@@ -59,7 +95,7 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Current Balance",
+                        text = "Current Balance (${currentAccountMode.getDisplayName()})",
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White
                     )
