@@ -24,7 +24,10 @@ data class AddEntryUiState(
     val amountError: String? = null,
     val descriptionError: String? = null,
     val error: String? = null,
-    val isSaved: Boolean = false
+    val isSaved: Boolean = false,
+    val chatMessages: List<ChatMessage> = emptyList(),
+    val showPreview: Boolean = false,
+    val isProcessingMessage: Boolean = false
 ) {
     val isValid: Boolean
         get() = amount.isNotEmpty() && 
@@ -34,6 +37,12 @@ data class AddEntryUiState(
                 amount.toDoubleOrNull() != null &&
                 amount.toDoubleOrNull()!! > 0
 }
+
+data class ChatMessage(
+    val content: String,
+    val isUser: Boolean,
+    val timestamp: Long = System.currentTimeMillis()
+)
 
 @HiltViewModel
 class AddEntryViewModel @Inject constructor(
@@ -159,6 +168,167 @@ class AddEntryViewModel @Inject constructor(
     }
     
     fun resetForm() {
+        _uiState.value = AddEntryUiState()
+    }
+    
+    fun sendMessage(message: String) {
+        val currentState = _uiState.value
+        val userMessage = ChatMessage(content = message, isUser = true)
+        
+        // Add user message to chat
+        _uiState.value = currentState.copy(
+            chatMessages = currentState.chatMessages + userMessage,
+            isProcessingMessage = true
+        )
+        
+        // Process the message with AI
+        processUserMessage(message)
+    }
+    
+    fun selectImage() {
+        // Handle image selection - for now, add a placeholder message
+        val currentState = _uiState.value
+        val userMessage = ChatMessage(content = "[Image uploaded]", isUser = true)
+        
+        _uiState.value = currentState.copy(
+            chatMessages = currentState.chatMessages + userMessage,
+            isProcessingMessage = true
+        )
+        
+        // Process image (placeholder for now)
+        processImageMessage()
+    }
+    
+    private fun processUserMessage(message: String) {
+        viewModelScope.launch {
+            try {
+                // Simulate AI processing
+                kotlinx.coroutines.delay(1500)
+                
+                // Use existing AI service to analyze the message
+                val suggestion = repository.createEntryFromText(message)
+                
+                val aiResponse = if (suggestion != null) {
+                    // Update the transaction data
+                    _uiState.value = _uiState.value.copy(
+                        amount = suggestion.amount.toString(),
+                        description = suggestion.description,
+                        transactionType = suggestion.type,
+                        category = suggestion.category,
+                        confidence = suggestion.confidence
+                    )
+                    
+                    "I've analyzed your transaction! I found:\n\n" +
+                    "💰 Amount: $${suggestion.amount}\n" +
+                    "📝 Description: ${suggestion.description}\n" +
+                    "📊 Type: ${suggestion.type.name.lowercase().capitalize()}\n" +
+                    "🏷️ Category: ${suggestion.category.getDisplayName()}\n\n" +
+                    "Would you like to review and confirm this transaction?"
+                } else {
+                    "I couldn't extract transaction details from your message. Could you please provide more specific information like the amount and what the transaction was for?"
+                }
+                
+                val assistantMessage = ChatMessage(content = aiResponse, isUser = false)
+                val currentState = _uiState.value
+                
+                _uiState.value = currentState.copy(
+                    chatMessages = currentState.chatMessages + assistantMessage,
+                    isProcessingMessage = false,
+                    showPreview = suggestion != null
+                )
+                
+            } catch (e: Exception) {
+                val errorMessage = ChatMessage(
+                    content = "Sorry, I encountered an error processing your message. Please try again.",
+                    isUser = false
+                )
+                val currentState = _uiState.value
+                
+                _uiState.value = currentState.copy(
+                    chatMessages = currentState.chatMessages + errorMessage,
+                    isProcessingMessage = false
+                )
+            }
+        }
+    }
+    
+    private fun processImageMessage() {
+        viewModelScope.launch {
+            try {
+                // Simulate image processing
+                kotlinx.coroutines.delay(2000)
+                
+                // For now, create a mock transaction from image
+                val mockTransaction = LedgerEntry(
+                    amount = 25.99,
+                    description = "Coffee and pastry",
+                    category = TransactionCategory.FOOD_DINING,
+                    type = TransactionType.EXPENSE,
+                    date = Date(),
+                    confidence = 0.85f
+                )
+                
+                _uiState.value = _uiState.value.copy(
+                    amount = mockTransaction.amount.toString(),
+                    description = mockTransaction.description,
+                    transactionType = mockTransaction.type,
+                    category = mockTransaction.category,
+                    confidence = mockTransaction.confidence
+                )
+                
+                val aiResponse = "I've analyzed your receipt! I found:\n\n" +
+                "💰 Amount: $${mockTransaction.amount}\n" +
+                "📝 Description: ${mockTransaction.description}\n" +
+                "📊 Type: ${mockTransaction.type.name.lowercase().capitalize()}\n" +
+                "🏷️ Category: ${mockTransaction.category.getDisplayName()}\n\n" +
+                "Confidence: ${(mockTransaction.confidence * 100).toInt()}%\n\n" +
+                "Would you like to review and confirm this transaction?"
+                
+                val assistantMessage = ChatMessage(content = aiResponse, isUser = false)
+                val currentState = _uiState.value
+                
+                _uiState.value = currentState.copy(
+                    chatMessages = currentState.chatMessages + assistantMessage,
+                    isProcessingMessage = false,
+                    showPreview = true
+                )
+                
+            } catch (e: Exception) {
+                val errorMessage = ChatMessage(
+                    content = "Sorry, I couldn't process the image. Please try again or describe the transaction manually.",
+                    isUser = false
+                )
+                val currentState = _uiState.value
+                
+                _uiState.value = currentState.copy(
+                    chatMessages = currentState.chatMessages + errorMessage,
+                    isProcessingMessage = false
+                )
+            }
+        }
+    }
+    
+    fun confirmTransaction() {
+        saveEntry()
+    }
+    
+    fun editTransaction() {
+        _uiState.value = _uiState.value.copy(
+            showPreview = false
+        )
+        
+        val assistantMessage = ChatMessage(
+            content = "Sure! What would you like to change about this transaction?",
+            isUser = false
+        )
+        val currentState = _uiState.value
+        
+        _uiState.value = currentState.copy(
+            chatMessages = currentState.chatMessages + assistantMessage
+        )
+    }
+    
+    fun resetChat() {
         _uiState.value = AddEntryUiState()
     }
 }

@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.solana.solmind.data.model.LedgerEntry
+import com.solana.solmind.data.model.TransactionCategory
 import com.solana.solmind.data.model.TransactionType
 import com.solana.solmind.ui.theme.*
 import com.solana.solmind.ui.viewmodel.HomeViewModel
@@ -275,5 +276,24 @@ fun TransactionItem(
                 fontWeight = FontWeight.Bold
             )
         }
+    }
+}
+
+fun getCategoryColor(category: TransactionCategory): androidx.compose.ui.graphics.Color {
+    return when (category) {
+        TransactionCategory.FOOD_DINING -> androidx.compose.ui.graphics.Color(0xFFFF6B6B)
+        TransactionCategory.TRANSPORTATION -> androidx.compose.ui.graphics.Color(0xFF4ECDC4)
+        TransactionCategory.SHOPPING -> androidx.compose.ui.graphics.Color(0xFFFFE66D)
+        TransactionCategory.ENTERTAINMENT -> androidx.compose.ui.graphics.Color(0xFFFF8B94)
+        TransactionCategory.UTILITIES -> androidx.compose.ui.graphics.Color(0xFF95E1D3)
+        TransactionCategory.HEALTHCARE -> androidx.compose.ui.graphics.Color(0xFFFCE38A)
+        TransactionCategory.EDUCATION -> androidx.compose.ui.graphics.Color(0xFF6C5CE7)
+        TransactionCategory.TRAVEL -> androidx.compose.ui.graphics.Color(0xFF74B9FF)
+        TransactionCategory.INVESTMENT -> androidx.compose.ui.graphics.Color(0xFF00B894)
+        TransactionCategory.SALARY -> androidx.compose.ui.graphics.Color(0xFF00CEC9)
+        TransactionCategory.FREELANCE -> androidx.compose.ui.graphics.Color(0xFFFD79A8)
+        TransactionCategory.BUSINESS -> androidx.compose.ui.graphics.Color(0xFFE17055)
+        TransactionCategory.GIFTS -> androidx.compose.ui.graphics.Color(0xFFA29BFE)
+        TransactionCategory.OTHER -> androidx.compose.ui.graphics.Color(0xFF636E72)
     }
 }
