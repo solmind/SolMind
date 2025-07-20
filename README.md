@@ -78,8 +78,7 @@ app/src/main/java/com/solana/ailedger/
 
 ### UI Screens
 - **HomeScreen**: Dashboard with balance overview and recent transactions
-- **AddEntryScreen**: Manual transaction entry with AI assistance
-- **CameraScreen**: Receipt capture and AI processing
+- **AddEntryScreen**: Manual transaction entry with AI assistance and integrated camera functionality
 - **WalletScreen**: Solana wallet management
 - **SettingsScreen**: App configuration and preferences
 
@@ -119,7 +118,7 @@ app/src/main/java/com/solana/ailedger/
 ### Adding Transactions
 
 1. **Manual Entry**: Use the "Add Entry" screen to manually input transaction details
-2. **Camera Capture**: Take a photo of a receipt and let AI extract the details
+2. **Camera Capture**: Use the integrated camera feature in the "Add Entry" screen to take photos of receipts and let AI extract the details
 3. **AI Assistance**: Get intelligent suggestions for categorization
 
 ### Managing Wallets
