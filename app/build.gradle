@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace 'com.solana.ailedger'
+    namespace 'com.solana.solmind'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.solana.ailedger"
+        applicationId "com.solana.solmind"
         minSdk 24
         targetSdk 34
         versionCode 1

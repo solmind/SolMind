@@ -1,0 +1,91 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Solana gradient -->
+    <linearGradient id="solanaMonogram" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9945FF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#14F195;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00D4FF;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Background gradient -->
+    <radialGradient id="bgMonogram" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Glow effect -->
+    <filter id="textGlow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="url(#bgMonogram)"/>
+  
+  <!-- SM Monogram -->
+  <g transform="translate(256, 256)" filter="url(#textGlow)">
+    <!-- S Letter -->
+    <path d="M -120 -100 
+             L -60 -100
+             C -30 -100, 0 -70, 0 -40
+             C 0 -10, -30 20, -60 20
+             L -80 20
+             L -100 20
+             L -100 40
+             L -60 40
+             C -30 40, 0 70, 0 100
+             L -80 100
+             C -110 100, -140 70, -140 40
+             L -100 40
+             C -100 55, -95 60, -80 60
+             L -40 60
+             C -25 60, -20 55, -20 40
+             C -20 25, -25 20, -40 20
+             L -80 20
+             C -110 20, -140 -10, -140 -40
+             C -140 -70, -110 -100, -80 -100
+             L -120 -100 Z" 
+          fill="url(#solanaMonogram)"/>
+    
+    <!-- M Letter -->
+    <path d="M 40 -100 
+             L 80 -100
+             L 120 -20
+             L 160 -100
+             L 200 -100
+             L 200 100
+             L 160 100
+             L 160 0
+             L 130 60
+             L 110 60
+             L 80 0
+             L 80 100
+             L 40 100
+             L 40 -100 Z" 
+          fill="url(#solanaMonogram)"/>
+  </g>
+  
+  <!-- Subtle brain elements -->
+  <g transform="translate(256, 256)" opacity="0.2">
+    <!-- Minimal brain outline -->
+    <path d="M -200 200 
+             C -220 180, -220 160, -200 140
+             C -180 120, -160 120, -140 140
+             L 140 140
+             C 160 120, 180 120, 200 140
+             C 220 160, 220 180, 200 200" 
+          stroke="white" 
+          stroke-width="2" 
+          fill="none"/>
+    
+    <!-- Small neural dots -->
+    <circle cx="-180" cy="180" r="2" fill="white"/>
+    <circle cx="-160" cy="160" r="2" fill="white"/>
+    <circle cx="160" cy="160" r="2" fill="white"/>
+    <circle cx="180" cy="180" r="2" fill="white"/>
+  </g>
+</svg>

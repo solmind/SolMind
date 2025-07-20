@@ -1,0 +1,53 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Vibrant gradient -->
+    <linearGradient id="vibrantGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06D6A0;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Dark background -->
+    <linearGradient id="darkBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0f23;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" rx="110" fill="url(#darkBg)"/>
+  
+  <!-- Brain -->
+  <g transform="translate(256, 280)">
+    <!-- Left hemisphere -->
+    <ellipse cx="-50" cy="0" rx="55" ry="75" fill="url(#vibrantGradient)" opacity="0.9"/>
+    
+    <!-- Right hemisphere -->
+    <ellipse cx="50" cy="0" rx="55" ry="75" fill="url(#vibrantGradient)" opacity="0.9"/>
+    
+    <!-- Center division -->
+    <rect x="-3" y="-75" width="6" height="150" fill="url(#darkBg)"/>
+    
+    <!-- Neural activity dots -->
+    <g fill="#ffffff">
+      <!-- Left side -->
+      <circle cx="-50" cy="-30" r="3" opacity="0.9"/>
+      <circle cx="-50" cy="0" r="3" opacity="0.7"/>
+      <circle cx="-50" cy="30" r="3" opacity="0.9"/>
+      <circle cx="-25" cy="-45" r="2" opacity="0.6"/>
+      <circle cx="-25" cy="45" r="2" opacity="0.6"/>
+      
+      <!-- Right side -->
+      <circle cx="50" cy="-30" r="3" opacity="0.9"/>
+      <circle cx="50" cy="0" r="3" opacity="0.7"/>
+      <circle cx="50" cy="30" r="3" opacity="0.9"/>
+      <circle cx="25" cy="-45" r="2" opacity="0.6"/>
+      <circle cx="25" cy="45" r="2" opacity="0.6"/>
+    </g>
+  </g>
+  
+  <!-- Subtle glow around brain -->
+  <g transform="translate(256, 280)" opacity="0.3">
+    <ellipse cx="-50" cy="0" rx="65" ry="85" fill="none" stroke="url(#vibrantGradient)" stroke-width="2"/>
+    <ellipse cx="50" cy="0" rx="65" ry="85" fill="none" stroke="url(#vibrantGradient)" stroke-width="2"/>
+  </g>
+</svg>

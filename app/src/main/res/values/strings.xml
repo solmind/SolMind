@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AI Ledger</string>
+    <string name="app_name">SolMind</string>
     <string name="home">Home</string>
     <string name="add_entry">Add Entry</string>
     <string name="camera">Camera</string>
@@ -82,7 +82,7 @@
     <string name="view_source_code">View source code on GitHub</string>
     <string name="report_bug">Report Bug</string>
     <string name="help_improve">Help us improve the app</string>
-    <string name="app_footer">AI Ledger for Solana</string>
+    <string name="app_footer">SolMind for Solana</string>
     <string name="hackathon_footer">Built for Solana Mobile Hackathon</string>
     
     <!-- Error Messages -->

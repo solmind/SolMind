@@ -1,0 +1,65 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Clean Solana gradient -->
+    <linearGradient id="cleanGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9945FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#14F195;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Background -->
+    <linearGradient id="bgClean" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="120" fill="url(#bgClean)"/>
+  
+  <!-- Brain icon centered -->
+  <g transform="translate(256, 256)">
+    <!-- Clean brain shape -->
+    <path d="M -90 -70 
+             C -130 -70, -150 -30, -150 10
+             C -150 50, -130 90, -90 90
+             L -10 90
+             C -10 50, 10 50, 10 10
+             C 10 -30, -10 -30, -10 -70
+             L 10 -70
+             C 10 -30, 30 -30, 30 10
+             C 30 50, 10 90, 90 90
+             C 130 90, 150 50, 150 10
+             C 150 -30, 130 -70, 90 -70
+             C 50 -70, 30 -30, 30 10
+             C 30 50, 10 50, 10 90
+             L -10 90
+             C -10 50, -30 50, -30 10
+             C -30 -30, -10 -30, -10 -70
+             L -90 -70 Z" 
+          fill="url(#cleanGradient)"/>
+    
+    <!-- Center line -->
+    <line x1="0" y1="-70" x2="0" y2="90" stroke="#1a1a2e" stroke-width="4"/>
+    
+    <!-- Minimal neural dots -->
+    <g fill="#ffffff" opacity="0.8">
+      <!-- Left hemisphere -->
+      <circle cx="-60" cy="-25" r="4"/>
+      <circle cx="-60" cy="25" r="4"/>
+      <circle cx="-30" cy="0" r="3"/>
+      
+      <!-- Right hemisphere -->
+      <circle cx="60" cy="-25" r="4"/>
+      <circle cx="60" cy="25" r="4"/>
+      <circle cx="30" cy="0" r="3"/>
+    </g>
+    
+    <!-- Subtle connecting lines -->
+    <g stroke="#ffffff" stroke-width="2" opacity="0.5">
+      <line x1="-60" y1="-25" x2="-30" y2="0"/>
+      <line x1="-60" y1="25" x2="-30" y2="0"/>
+      <line x1="60" y1="-25" x2="30" y2="0"/>
+      <line x1="60" y1="25" x2="30" y2="0"/>
+    </g>
+  </g>
+</svg>
