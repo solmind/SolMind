@@ -1,0 +1,135 @@
+<resources>
+    <string name="app_name">AI Ledger</string>
+    <string name="home">Home</string>
+    <string name="add_entry">Add Entry</string>
+    <string name="camera">Camera</string>
+    <string name="wallet">Wallet</string>
+    <string name="settings">Settings</string>
+    
+    <!-- Home Screen -->
+    <string name="balance_overview">Balance Overview</string>
+    <string name="total_balance">Total Balance</string>
+    <string name="this_month">This Month</string>
+    <string name="income">Income</string>
+    <string name="expenses">Expenses</string>
+    <string name="recent_transactions">Recent Transactions</string>
+    <string name="no_transactions">No transactions yet</string>
+    <string name="add_first_transaction">Add your first transaction to get started</string>
+    
+    <!-- Add Entry Screen -->
+    <string name="add_transaction">Add Transaction</string>
+    <string name="amount">Amount</string>
+    <string name="description">Description</string>
+    <string name="get_ai_suggestion">Get AI Suggestion</string>
+    <string name="transaction_type">Transaction Type</string>
+    <string name="category">Category</string>
+    <string name="date">Date</string>
+    <string name="ai_confidence">AI Confidence</string>
+    <string name="confident">confident</string>
+    <string name="save">Save</string>
+    <string name="back">Back</string>
+    
+    <!-- Camera Screen -->
+    <string name="capture_receipt">Capture Receipt</string>
+    <string name="camera_permission_required">Camera permission is required to capture receipts</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="processing_image">Processing image...</string>
+    <string name="capture">Capture</string>
+    <string name="retake">Retake</string>
+    <string name="use_photo">Use Photo</string>
+    
+    <!-- Wallet Screen -->
+    <string name="solana_wallets">Solana Wallets</string>
+    <string name="sync_all">Sync All</string>
+    <string name="add_wallet">Add Wallet</string>
+    <string name="no_wallets_added">No Wallets Added</string>
+    <string name="add_wallet_description">Add a Solana wallet address to start tracking your on-chain activities</string>
+    <string name="wallet_name">Wallet Name</string>
+    <string name="wallet_address">Wallet Address</string>
+    <string name="enter_wallet_address">Enter Solana wallet address...</string>
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
+    <string name="sync">Sync</string>
+    <string name="delete">Delete</string>
+    <string name="last_sync">Last sync</string>
+    <string name="balance">Balance</string>
+    <string name="sol">SOL</string>
+    
+    <!-- Settings Screen -->
+    <string name="app_settings">App Settings</string>
+    <string name="dark_theme">Dark Theme</string>
+    <string name="use_dark_theme">Use dark theme for the app</string>
+    <string name="notifications">Notifications</string>
+    <string name="enable_notifications">Enable push notifications</string>
+    <string name="sync_settings">Sync Settings</string>
+    <string name="auto_sync">Auto Sync</string>
+    <string name="auto_sync_description">Automatically sync wallet transactions</string>
+    <string name="sync_interval">Sync Interval</string>
+    <string name="ai_settings">AI Settings</string>
+    <string name="show_confidence_score">Show Confidence Score</string>
+    <string name="show_confidence_description">Display AI confidence for categorization</string>
+    <string name="auto_categorize">Auto-categorize</string>
+    <string name="auto_categorize_description">Automatically categorize transactions with high confidence</string>
+    <string name="data_management">Data Management</string>
+    <string name="export_data">Export Data</string>
+    <string name="export_data_description">Export your ledger data to CSV</string>
+    <string name="clear_all_data">Clear All Data</string>
+    <string name="clear_data_description">Delete all ledger entries and wallets</string>
+    <string name="about">About</string>
+    <string name="version">Version</string>
+    <string name="version_number">1.0.0 (Beta)</string>
+    <string name="open_source">Open Source</string>
+    <string name="view_source_code">View source code on GitHub</string>
+    <string name="report_bug">Report Bug</string>
+    <string name="help_improve">Help us improve the app</string>
+    <string name="app_footer">AI Ledger for Solana</string>
+    <string name="hackathon_footer">Built for Solana Mobile Hackathon</string>
+    
+    <!-- Error Messages -->
+    <string name="amount_required">Amount is required</string>
+    <string name="invalid_amount">Invalid amount format</string>
+    <string name="amount_greater_than_zero">Amount must be greater than 0</string>
+    <string name="description_required">Description is required</string>
+    <string name="description_min_length">Description must be at least 3 characters</string>
+    <string name="description_max_length">Description must be less than 200 characters</string>
+    <string name="address_required">Address is required</string>
+    <string name="invalid_solana_address">Invalid Solana address</string>
+    <string name="name_required">Name is required</string>
+    <string name="name_min_length">Name must be at least 2 characters</string>
+    <string name="wallet_exists">Wallet with this address already exists</string>
+    <string name="failed_to_add_wallet">Failed to add wallet</string>
+    <string name="failed_to_sync_wallet">Failed to sync wallet</string>
+    <string name="failed_to_delete_wallet">Failed to delete wallet</string>
+    <string name="failed_to_save_entry">Failed to save entry</string>
+    <string name="failed_to_get_ai_suggestion">Failed to get AI suggestion</string>
+    <string name="failed_to_load_wallets">Failed to load wallets</string>
+    <string name="failed_to_sync_wallets">Failed to sync wallets</string>
+    
+    <!-- Status -->
+    <string name="active">Active</string>
+    <string name="pending">Pending</string>
+    <string name="error">Error</string>
+    <string name="inactive">Inactive</string>
+    
+    <!-- Transaction Categories -->
+    <string name="food">Food</string>
+    <string name="transportation">Transportation</string>
+    <string name="shopping">Shopping</string>
+    <string name="entertainment">Entertainment</string>
+    <string name="bills">Bills</string>
+    <string name="healthcare">Healthcare</string>
+    <string name="education">Education</string>
+    <string name="investment">Investment</string>
+    <string name="other">Other</string>
+    
+    <!-- Transaction Types -->
+    <string name="expense">Expense</string>
+    
+    <!-- Time Intervals -->
+    <string name="interval_15_minutes">15 minutes</string>
+    <string name="interval_30_minutes">30 minutes</string>
+    <string name="interval_1_hour">1 hour</string>
+    <string name="interval_6_hours">6 hours</string>
+    <string name="interval_12_hours">12 hours</string>
+    <string name="interval_24_hours">24 hours</string>
+</resources>
