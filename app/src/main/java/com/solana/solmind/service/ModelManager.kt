@@ -2,10 +2,12 @@ package com.solana.solmind.service
 
 import android.content.Context
 import android.content.SharedPreferences
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
@@ -38,7 +40,9 @@ data class ModelState(
 
 @Singleton
 class ModelManager @Inject constructor(
-    private val context: Context
+    @ApplicationContext private val context: Context,
+    private val huggingFaceDownloadManager: HuggingFaceDownloadManager,
+    private val huggingFaceConfig: HuggingFaceConfig
 ) {
     private val prefs: SharedPreferences = context.getSharedPreferences("model_prefs", Context.MODE_PRIVATE)
     
@@ -61,7 +65,7 @@ class ModelManager @Inject constructor(
                 name = "FLAN-T5 Small",
                 description = "Compact model for basic transaction parsing",
                 size = "77 MB",
-                downloadUrl = "https://huggingface.co/google/flan-t5-small/resolve/main/model.tflite",
+                downloadUrl = "https://huggingface.co/google/flan-t5-small/resolve/main/pytorch_model.bin",
                 isLocal = true
             ),
             LanguageModel(
@@ -69,7 +73,7 @@ class ModelManager @Inject constructor(
                 name = "FLAN-T5 Base",
                 description = "Balanced model for general transaction analysis",
                 size = "248 MB",
-                downloadUrl = "https://huggingface.co/google/flan-t5-base/resolve/main/model.tflite",
+                downloadUrl = "https://huggingface.co/google/flan-t5-base/resolve/main/pytorch_model.bin",
                 isLocal = true
             ),
             LanguageModel(
@@ -77,7 +81,7 @@ class ModelManager @Inject constructor(
                 name = "DistilBERT Base",
                 description = "Fast and efficient model for transaction understanding",
                 size = "268 MB",
-                downloadUrl = "https://huggingface.co/distilbert-base-uncased/resolve/main/model.tflite",
+                downloadUrl = "https://huggingface.co/distilbert-base-uncased/resolve/main/pytorch_model.bin",
                 isLocal = true
             ),
             LanguageModel(
@@ -117,33 +121,38 @@ class ModelManager @Inject constructor(
     }
     
     fun isModelDownloaded(modelId: String): Boolean {
-        // Check if model file exists in app's internal storage
-        val modelFile = File(context.filesDir, "models/$modelId/model.tflite")
-        val isDownloaded = modelFile.exists() && prefs.getBoolean(MODEL_DOWNLOADED_PREFIX + modelId, false)
-        return isDownloaded
+        // Use HuggingFaceDownloadManager to check if model exists
+        val isFileDownloaded = huggingFaceDownloadManager.isModelDownloaded(modelId, "pytorch_model.bin")
+        val isMarkedDownloaded = prefs.getBoolean(MODEL_DOWNLOADED_PREFIX + modelId, false)
+        return isFileDownloaded && isMarkedDownloaded
     }
     
     suspend fun downloadModel(modelId: String): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
+                // Find the model configuration
+                val model = getAvailableModels().find { it.id == modelId }
+                    ?: return@withContext Result.failure(Exception("Model not found: $modelId"))
+                
+                if (model.downloadUrl.isEmpty()) {
+                    return@withContext Result.failure(Exception("No download URL available for model: $modelId"))
+                }
+                
                 // Update status to downloading
                 updateModelStatus(modelId, ModelDownloadStatus.DOWNLOADING)
                 
-                // Simulate download progress
-                for (progress in 0..100 step 10) {
-                    kotlinx.coroutines.delay(200) // Simulate download time
-                    updateDownloadProgress(modelId, progress / 100f)
+                // Use HuggingFaceDownloadManager to download with progress tracking
+                huggingFaceDownloadManager.downloadModelWithProgress(
+                    modelId = modelId,
+                    downloadUrl = model.downloadUrl,
+                    fileName = "pytorch_model.bin",
+                    authToken = huggingFaceConfig.getApiToken()
+                ).collect { progress ->
+                    // Update download progress
+                    updateDownloadProgress(modelId, progress.percentage / 100f)
                 }
                 
-                // Create model directory
-                val modelDir = File(context.filesDir, "models/$modelId")
-                modelDir.mkdirs()
-                
-                // Create a placeholder model file (in real implementation, download actual model)
-                val modelFile = File(modelDir, "model.tflite")
-                modelFile.writeText("# Placeholder model file for $modelId\n# In production, this would be the actual TensorFlow Lite model")
-                
-                // Mark as downloaded
+                // Mark as downloaded in preferences
                 prefs.edit().putBoolean(MODEL_DOWNLOADED_PREFIX + modelId, true).apply()
                 updateModelStatus(modelId, ModelDownloadStatus.DOWNLOADED)
                 
@@ -163,10 +172,10 @@ class ModelManager @Inject constructor(
                     return@withContext Result.failure(Exception("Cannot delete currently selected model"))
                 }
                 
-                // Delete model files
-                val modelDir = File(context.filesDir, "models/$modelId")
-                if (modelDir.exists()) {
-                    modelDir.deleteRecursively()
+                // Use HuggingFaceDownloadManager to delete model files
+                val deleteResult = huggingFaceDownloadManager.deleteModel(modelId)
+                if (deleteResult.isFailure) {
+                    return@withContext deleteResult
                 }
                 
                 // Update preferences
@@ -209,8 +218,55 @@ class ModelManager @Inject constructor(
     
     fun getModelPath(modelId: String): String? {
         if (!isModelDownloaded(modelId)) return null
-        return File(context.filesDir, "models/$modelId/model.tflite").absolutePath
+        return huggingFaceDownloadManager.getModelPath(modelId, "pytorch_model.bin")
     }
     
     fun getAvailableModelsList(): List<LanguageModel> = getAvailableModels()
+    
+    /**
+     * Get model information from Hugging Face Hub
+     */
+    suspend fun getModelInfoFromHub(modelId: String): Result<HuggingFaceModelInfo> {
+        val modelRepo = huggingFaceConfig.getModelRepo(modelId)
+            ?: return Result.failure(Exception("Unknown model repository for: $modelId"))
+        
+        return huggingFaceDownloadManager.getModelInfo(
+            modelId = modelRepo,
+            authToken = huggingFaceConfig.getApiToken()
+        )
+    }
+    
+    /**
+     * Get list of files in a model repository
+     */
+    suspend fun getModelFilesFromHub(modelId: String): Result<List<HuggingFaceFileInfo>> {
+        val modelRepo = huggingFaceConfig.getModelRepo(modelId)
+            ?: return Result.failure(Exception("Unknown model repository for: $modelId"))
+        
+        return huggingFaceDownloadManager.getModelFiles(
+            modelId = modelRepo,
+            authToken = huggingFaceConfig.getApiToken()
+        )
+    }
+    
+    /**
+     * Check if Hugging Face configuration is valid
+     */
+    fun isHuggingFaceConfigValid(): Boolean {
+        return huggingFaceConfig.isConfigValid()
+    }
+    
+    /**
+     * Set Hugging Face API token
+     */
+    fun setHuggingFaceApiToken(token: String?) {
+        huggingFaceConfig.setApiToken(token)
+    }
+    
+    /**
+     * Enable or disable Hugging Face authentication
+     */
+    fun setHuggingFaceAuthEnabled(enabled: Boolean) {
+        huggingFaceConfig.setAuthEnabled(enabled)
+    }
 }

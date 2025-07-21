@@ -19,12 +19,12 @@ import androidx.navigation.NavController
 import com.solana.solmind.data.manager.ThemeMode
 import com.solana.solmind.data.manager.ThemePreferenceManager
 import com.solana.solmind.data.model.AccountMode
-import com.solana.solmind.service.ModelManager
 import com.solana.solmind.service.LanguageModel
 import com.solana.solmind.service.ModelDownloadStatus
 import com.solana.solmind.service.SubscriptionManager
 import com.solana.solmind.service.SubscriptionTier
 import com.solana.solmind.service.SubscriptionBenefits
+import com.solana.solmind.ui.viewmodel.ModelManagerViewModel
 import com.solana.solmind.ui.viewmodel.WalletViewModel
 import kotlinx.coroutines.launch
 
@@ -32,11 +32,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    walletViewModel: WalletViewModel = hiltViewModel()
+    walletViewModel: WalletViewModel = hiltViewModel(),
+    modelManagerViewModel: ModelManagerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val themePreferenceManager = remember { ThemePreferenceManager(context) }
-    val modelManager = remember { ModelManager(context) }
     val subscriptionManager = remember { SubscriptionManager(context) }
     
     var enableNotifications by remember { mutableStateOf(true) }
@@ -52,8 +52,8 @@ fun SettingsScreen(
     val currentAccountMode by walletViewModel.currentAccountMode.collectAsState()
     val onchainThemeMode by themePreferenceManager.onchainThemeMode.collectAsState(initial = ThemeMode.LIGHT)
     val offchainThemeMode by themePreferenceManager.offchainThemeMode.collectAsState(initial = ThemeMode.DARK)
-    val selectedModel by modelManager.selectedModel.collectAsState()
-    val modelStates by modelManager.modelStates.collectAsState()
+    val selectedModel by modelManagerViewModel.selectedModel.collectAsState()
+    val modelStates by modelManagerViewModel.modelStates.collectAsState()
     val isSubscribed by subscriptionManager.isSubscribed.collectAsState()
     val subscriptionTier by subscriptionManager.subscriptionTier.collectAsState()
     
@@ -233,7 +233,7 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Settings,
                     title = "Language Model",
-                    subtitle = "Current: ${selectedModel.name} (${if (modelManager.isModelDownloaded(selectedModel.id)) "Downloaded" else "Not Downloaded"})",
+                    subtitle = "Current: ${selectedModel.name} (${if (modelManagerViewModel.isModelDownloaded(selectedModel.id)) "Downloaded" else "Not Downloaded"})",
                     onClick = { showModelSelectionDialog = true }
                 )
                 
@@ -372,7 +372,7 @@ fun SettingsScreen(
     // Model Selection Dialog
     if (showModelSelectionDialog) {
         ModelSelectionDialog(
-            modelManager = modelManager,
+            modelManagerViewModel = modelManagerViewModel,
             modelStates = modelStates,
             selectedModel = selectedModel,
             isSubscribed = isSubscribed,
@@ -382,19 +382,15 @@ fun SettingsScreen(
                     showModelSelectionDialog = false
                     showUpgradeDialog = true
                 } else {
-                    modelManager.selectModel(model)
+                    modelManagerViewModel.selectModel(model)
                     showModelSelectionDialog = false
                 }
             },
             onDownloadModel = { modelId ->
-                coroutineScope.launch {
-                    modelManager.downloadModel(modelId)
-                }
+                modelManagerViewModel.downloadModel(modelId)
             },
             onDeleteModel = { modelId ->
-                coroutineScope.launch {
-                    modelManager.deleteModel(modelId)
-                }
+                modelManagerViewModel.deleteModel(modelId)
             },
             onUpgradeClicked = {
                 showModelSelectionDialog = false
@@ -539,7 +535,7 @@ fun UpgradeDialog(
 
 @Composable
 fun ModelSelectionDialog(
-    modelManager: ModelManager,
+    modelManagerViewModel: ModelManagerViewModel,
     modelStates: List<com.solana.solmind.service.ModelState>,
     selectedModel: LanguageModel,
     isSubscribed: Boolean,
