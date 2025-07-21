@@ -3,7 +3,6 @@ package com.solana.solmind.ui.navigation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -20,19 +19,16 @@ import androidx.navigation.compose.rememberNavController
 import com.solana.solmind.ui.screens.AddEntryScreen
 import com.solana.solmind.ui.screens.HomeScreen
 import com.solana.solmind.ui.screens.SettingsScreen
-import com.solana.solmind.ui.screens.WalletScreen
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Home : Screen("home", "Home", Icons.Filled.Home)
     object AddEntry : Screen("add_entry", "Add Entry", Icons.Filled.Add)
-    object Wallet : Screen("wallet", "Wallet", Icons.Filled.AccountCircle)
     object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
 }
 
 val bottomNavItems = listOf(
     Screen.Home,
     Screen.AddEntry,
-    Screen.Wallet,
     Screen.Settings
 )
 
@@ -83,9 +79,7 @@ fun SolMindNavigation() {
             composable(Screen.AddEntry.route) {
                 AddEntryScreen(navController = navController)
             }
-            composable(Screen.Wallet.route) {
-                WalletScreen(navController = navController)
-            }
+
             composable(Screen.Settings.route) {
                 SettingsScreen(navController = navController)
             }
