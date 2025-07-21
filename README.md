@@ -6,9 +6,12 @@ An AI-powered expense tracking Android app built for the Solana Mobile Hackathon
 
 ### 🤖 AI-Powered Expense Classification
 - **Smart Text Recognition**: Extract transaction details from receipt photos using ML Kit
-- **Intelligent Categorization**: Automatically categorize expenses using AI algorithms
+- **Local Language Models**: Choose from multiple AI models (FLAN-T5 Small, DialoGPT Small, DistilBERT Base)
+- **Model Management**: Download, select, and manage AI models directly from settings
+- **Intelligent Categorization**: Automatically categorize expenses using selected AI models
 - **Confidence Scoring**: Display AI confidence levels for categorization accuracy
 - **Manual Override**: Easy manual editing and correction of AI suggestions
+- **Offline AI**: All AI processing runs locally on device for privacy
 
 ### 🔗 Solana Blockchain Integration
 - **Wallet Management**: Add and manage multiple Solana wallet addresses
@@ -38,7 +41,7 @@ An AI-powered expense tracking Android app built for the Solana Mobile Hackathon
 - **Dependency Injection**: Hilt
 - **Database**: Room (SQLite)
 - **Preferences**: DataStore for theme and user preferences
-- **AI/ML**: ML Kit for text recognition
+- **AI/ML**: ML Kit for text recognition, TensorFlow Lite for local AI models
 - **Blockchain**: Solana Web3.js integration
 - **Camera**: CameraX
 - **Navigation**: Jetpack Navigation Compose
@@ -62,11 +65,18 @@ app/src/main/java/com/solana/ailedger/
 
 ## Key Components
 
-### AI Service (`AIService.kt`)
+### AI Service (`AIService.kt` & `LocalAIService.kt`)
 - Text extraction from images using ML Kit
-- Transaction categorization based on keywords
+- Local AI model inference using TensorFlow Lite
+- Transaction categorization using selected language models
 - Amount and date extraction from text
 - Confidence scoring for AI predictions
+
+### Model Manager (`ModelManager.kt`)
+- Local language model selection and management
+- Model download progress tracking
+- Support for multiple AI models (FLAN-T5, DialoGPT, DistilBERT)
+- Model deletion and storage management
 
 ### Solana Service (`SolanaService.kt`)
 - Solana RPC integration
@@ -83,7 +93,7 @@ app/src/main/java/com/solana/ailedger/
 - **HomeScreen**: Dashboard with balance overview and recent transactions
 - **AddEntryScreen**: Manual transaction entry with AI assistance and integrated camera functionality
 - **WalletScreen**: Solana wallet management
-- **SettingsScreen**: App configuration and preferences
+- **SettingsScreen**: App configuration, preferences, and AI model management
 
 ## Getting Started
 
