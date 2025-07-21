@@ -16,7 +16,10 @@ data class LanguageModel(
     val name: String,
     val description: String,
     val size: String,
-    val isDefault: Boolean = false
+    val isDefault: Boolean = false,
+    val downloadUrl: String = "",
+    val isLocal: Boolean = true,
+    val requiresSubscription: Boolean = false
 )
 
 enum class ModelDownloadStatus {
@@ -51,34 +54,50 @@ class ModelManager @Inject constructor(
     companion object {
         private const val SELECTED_MODEL_KEY = "selected_model_id"
         private const val MODEL_DOWNLOADED_PREFIX = "model_downloaded_"
-    }
-    
-    private fun getAvailableModels(): List<LanguageModel> {
-        return listOf(
+        
+        val AVAILABLE_MODELS = listOf(
             LanguageModel(
-                id = "google/flan-t5-small",
+                id = "flan-t5-small",
                 name = "FLAN-T5 Small",
-                description = "Google's instruction-tuned T5 model, optimized for mobile",
-                size = "242 MB",
-                isDefault = true
+                description = "Compact model for basic transaction parsing",
+                size = "77 MB",
+                downloadUrl = "https://huggingface.co/google/flan-t5-small/resolve/main/model.tflite",
+                isLocal = true
             ),
             LanguageModel(
-                id = "microsoft/DialoGPT-small",
-                name = "DialoGPT Small",
-                description = "Microsoft's conversational AI model",
-                size = "117 MB"
+                id = "flan-t5-base",
+                name = "FLAN-T5 Base",
+                description = "Balanced model for general transaction analysis",
+                size = "248 MB",
+                downloadUrl = "https://huggingface.co/google/flan-t5-base/resolve/main/model.tflite",
+                isLocal = true
             ),
             LanguageModel(
-                id = "distilbert-base-uncased",
+                id = "distilbert-base",
                 name = "DistilBERT Base",
-                description = "Lightweight BERT model for text understanding",
-                size = "268 MB"
+                description = "Fast and efficient model for transaction understanding",
+                size = "268 MB",
+                downloadUrl = "https://huggingface.co/distilbert-base-uncased/resolve/main/model.tflite",
+                isLocal = true
+            ),
+            LanguageModel(
+                id = "solmind-cloud",
+                name = "SolMind Cloud AI",
+                description = "Advanced cloud-based AI model with superior accuracy",
+                size = "Cloud",
+                downloadUrl = "",
+                isLocal = false,
+                requiresSubscription = true
             )
         )
     }
     
+    private fun getAvailableModels(): List<LanguageModel> {
+        return AVAILABLE_MODELS
+    }
+    
     private fun getDefaultModel(): LanguageModel {
-        val savedModelId = prefs.getString(SELECTED_MODEL_KEY, "google/flan-t5-small")
+        val savedModelId = prefs.getString(SELECTED_MODEL_KEY, "flan-t5-small")
         return getAvailableModels().find { it.id == savedModelId } ?: getAvailableModels().first()
     }
     

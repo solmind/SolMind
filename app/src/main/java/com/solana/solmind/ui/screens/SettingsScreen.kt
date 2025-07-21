@@ -22,6 +22,9 @@ import com.solana.solmind.data.model.AccountMode
 import com.solana.solmind.service.ModelManager
 import com.solana.solmind.service.LanguageModel
 import com.solana.solmind.service.ModelDownloadStatus
+import com.solana.solmind.service.SubscriptionManager
+import com.solana.solmind.service.SubscriptionTier
+import com.solana.solmind.service.SubscriptionBenefits
 import com.solana.solmind.ui.viewmodel.WalletViewModel
 import kotlinx.coroutines.launch
 
@@ -34,6 +37,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val themePreferenceManager = remember { ThemePreferenceManager(context) }
     val modelManager = remember { ModelManager(context) }
+    val subscriptionManager = remember { SubscriptionManager(context) }
     
     var enableNotifications by remember { mutableStateOf(true) }
     var autoSync by remember { mutableStateOf(true) }
@@ -43,12 +47,15 @@ fun SettingsScreen(
     var showOnchainThemeDialog by remember { mutableStateOf(false) }
     var showOffchainThemeDialog by remember { mutableStateOf(false) }
     var showModelSelectionDialog by remember { mutableStateOf(false) }
+    var showUpgradeDialog by remember { mutableStateOf(false) }
     
     val currentAccountMode by walletViewModel.currentAccountMode.collectAsState()
     val onchainThemeMode by themePreferenceManager.onchainThemeMode.collectAsState(initial = ThemeMode.LIGHT)
     val offchainThemeMode by themePreferenceManager.offchainThemeMode.collectAsState(initial = ThemeMode.DARK)
     val selectedModel by modelManager.selectedModel.collectAsState()
     val modelStates by modelManager.modelStates.collectAsState()
+    val isSubscribed by subscriptionManager.isSubscribed.collectAsState()
+    val subscriptionTier by subscriptionManager.subscriptionTier.collectAsState()
     
     val coroutineScope = rememberCoroutineScope()
     
@@ -65,6 +72,83 @@ fun SettingsScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
+            // Subscription Section
+            if (!isSubscribed) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .clickable { showUpgradeDialog = true },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Upgrade to SolMind Master",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "Unlock cloud AI models and premium features",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        Icon(
+                            Icons.Default.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            } else {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "SolMind Master Active",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+                }
+            }
+            
             // Theme Settings Section
             SettingsSection(title = "Theme Settings") {
                 SettingsItem(
@@ -291,10 +375,16 @@ fun SettingsScreen(
             modelManager = modelManager,
             modelStates = modelStates,
             selectedModel = selectedModel,
+            isSubscribed = isSubscribed,
             onDismiss = { showModelSelectionDialog = false },
             onModelSelected = { model ->
-                modelManager.selectModel(model)
-                showModelSelectionDialog = false
+                if (model.requiresSubscription && !isSubscribed) {
+                    showModelSelectionDialog = false
+                    showUpgradeDialog = true
+                } else {
+                    modelManager.selectModel(model)
+                    showModelSelectionDialog = false
+                }
             },
             onDownloadModel = { modelId ->
                 coroutineScope.launch {
@@ -305,9 +395,146 @@ fun SettingsScreen(
                 coroutineScope.launch {
                     modelManager.deleteModel(modelId)
                 }
+            },
+            onUpgradeClicked = {
+                showModelSelectionDialog = false
+                showUpgradeDialog = true
             }
         )
     }
+    
+    // Upgrade Dialog
+    if (showUpgradeDialog) {
+        UpgradeDialog(
+            onDismiss = { showUpgradeDialog = false },
+            onUpgrade = {
+                subscriptionManager.upgradeToMaster()
+                showUpgradeDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun UpgradeDialog(
+    onDismiss: () -> Unit,
+    onUpgrade: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Star,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Upgrade to SolMind Master",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Unlock premium features and support SolMind development:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                SubscriptionBenefits.masterBenefits.forEach { benefit ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            when (benefit.icon) {
+                                "cloud" -> Icons.Default.CloudDone
+                                "favorite" -> Icons.Default.Favorite
+                                "star" -> Icons.Default.Star
+                                "support" -> Icons.Default.SupportAgent
+                                "analytics" -> Icons.Default.Analytics
+                                else -> Icons.Default.CheckCircle
+                            },
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = benefit.title,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = benefit.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Special Launch Price",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "FREE",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Limited time offer for early adopters",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onUpgrade,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(
+                    Icons.Default.Star,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Upgrade Now")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Maybe Later")
+            }
+        }
+    )
 }
 
 @Composable
@@ -315,10 +542,12 @@ fun ModelSelectionDialog(
     modelManager: ModelManager,
     modelStates: List<com.solana.solmind.service.ModelState>,
     selectedModel: LanguageModel,
+    isSubscribed: Boolean,
     onDismiss: () -> Unit,
     onModelSelected: (LanguageModel) -> Unit,
     onDownloadModel: (String) -> Unit,
-    onDeleteModel: (String) -> Unit
+    onDeleteModel: (String) -> Unit,
+    onUpgradeClicked: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -345,9 +574,11 @@ fun ModelSelectionDialog(
                     ModelItem(
                         modelState = modelState,
                         isSelected = selectedModel.id == modelState.model.id,
+                        isSubscribed = isSubscribed,
                         onModelSelected = onModelSelected,
                         onDownloadModel = onDownloadModel,
-                        onDeleteModel = onDeleteModel
+                        onDeleteModel = onDeleteModel,
+                        onUpgradeClicked = onUpgradeClicked
                     )
                 }
             }
@@ -364,9 +595,11 @@ fun ModelSelectionDialog(
 fun ModelItem(
     modelState: com.solana.solmind.service.ModelState,
     isSelected: Boolean,
+    isSubscribed: Boolean,
     onModelSelected: (LanguageModel) -> Unit,
     onDownloadModel: (String) -> Unit,
-    onDeleteModel: (String) -> Unit
+    onDeleteModel: (String) -> Unit,
+    onUpgradeClicked: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -390,11 +623,14 @@ fun ModelItem(
                         RadioButton(
                             selected = isSelected,
                             onClick = { 
-                                if (modelState.status == ModelDownloadStatus.DOWNLOADED) {
+                                if (!modelState.model.isLocal) {
+                                    // Cloud model
+                                    onModelSelected(modelState.model)
+                                } else if (modelState.status == ModelDownloadStatus.DOWNLOADED) {
                                     onModelSelected(modelState.model)
                                 }
                             },
-                            enabled = modelState.status == ModelDownloadStatus.DOWNLOADED
+                            enabled = !modelState.model.isLocal || modelState.status == ModelDownloadStatus.DOWNLOADED
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
@@ -430,23 +666,51 @@ fun ModelItem(
                 }
                 
                 // Action button
-                when (modelState.status) {
-                    ModelDownloadStatus.NOT_DOWNLOADED -> {
+                if (!modelState.model.isLocal) {
+                    // Cloud model
+                    if (modelState.model.requiresSubscription && !isSubscribed) {
                         Button(
-                            onClick = { onDownloadModel(modelState.model.id) },
+                            onClick = { onUpgradeClicked() },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
+                                containerColor = MaterialTheme.colorScheme.tertiary
                             )
                         ) {
                             Icon(
-                                 Icons.Default.Add,
-                                 contentDescription = null,
-                                 modifier = Modifier.size(16.dp)
-                             )
+                                Icons.Default.Star,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Download")
+                            Text("Upgrade")
+                        }
+                    } else {
+                        Row {
+                            Icon(
+                                Icons.Default.CloudDone,
+                                contentDescription = "Cloud model",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                     }
+                } else {
+                    when (modelState.status) {
+                        ModelDownloadStatus.NOT_DOWNLOADED -> {
+                            Button(
+                                onClick = { onDownloadModel(modelState.model.id) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Icon(
+                                     Icons.Default.Add,
+                                     contentDescription = null,
+                                     modifier = Modifier.size(16.dp)
+                                 )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Download")
+                            }
+                        }
                     
                     ModelDownloadStatus.DOWNLOADING -> {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -484,19 +748,20 @@ fun ModelItem(
                         }
                     }
                     
-                    ModelDownloadStatus.ERROR -> {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                 Icons.Default.Warning,
-                                 contentDescription = "Error",
-                                 tint = MaterialTheme.colorScheme.error,
-                                 modifier = Modifier.size(24.dp)
-                             )
-                            Text(
-                                text = "Error",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
+                        ModelDownloadStatus.ERROR -> {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                     Icons.Default.Warning,
+                                     contentDescription = "Error",
+                                     tint = MaterialTheme.colorScheme.error,
+                                     modifier = Modifier.size(24.dp)
+                                 )
+                                Text(
+                                    text = "Error",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
                     }
                 }
