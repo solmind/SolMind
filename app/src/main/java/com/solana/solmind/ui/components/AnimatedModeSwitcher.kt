@@ -8,8 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -120,12 +119,17 @@ private fun ModeSwitcherButton(
             .rotate(rotation),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = if (isOnchain) Icons.Default.Send else Icons.Default.Home,
-            contentDescription = if (isOnchain) "Blockchain Mode (On-chain) - Tap to switch to Local Mode" else "Local Mode (Off-chain) - Tap to switch to Blockchain Mode",
-            tint = Color.White,
-            modifier = Modifier.size(24.dp)
-        )
+        if (isOnchain) {
+            OnchainIcon(
+                modifier = Modifier.size(24.dp),
+                color = Color.White
+            )
+        } else {
+            OffchainIcon(
+                modifier = Modifier.size(24.dp),
+                color = Color.White
+            )
+        }
     }
 }
 

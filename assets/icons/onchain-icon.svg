@@ -1,0 +1,33 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Blockchain representation with connected blocks -->
+  <g fill="currentColor">
+    <!-- Block 1 -->
+    <rect x="2" y="8" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <circle cx="4" cy="10" r="0.8" fill="currentColor"/>
+    
+    <!-- Connection line 1 -->
+    <line x1="6" y1="10" x2="8" y2="10" stroke="currentColor" stroke-width="1.5"/>
+    
+    <!-- Block 2 -->
+    <rect x="8" y="6" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <circle cx="10" cy="8" r="0.8" fill="currentColor"/>
+    
+    <!-- Connection line 2 -->
+    <line x1="12" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="1.5"/>
+    
+    <!-- Block 3 -->
+    <rect x="14" y="10" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <circle cx="16" cy="12" r="0.8" fill="currentColor"/>
+    
+    <!-- Connection line 3 -->
+    <line x1="18" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="1.5"/>
+    
+    <!-- Block 4 -->
+    <rect x="20" y="8" width="2" height="4" rx="0.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    
+    <!-- Network connections (dotted lines showing distributed nature) -->
+    <line x1="4" y1="6" x2="10" y2="6" stroke="currentColor" stroke-width="1" stroke-dasharray="2,2" opacity="0.6"/>
+    <line x1="10" y1="14" x2="16" y2="14" stroke="currentColor" stroke-width="1" stroke-dasharray="2,2" opacity="0.6"/>
+    <line x1="16" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="1" stroke-dasharray="2,2" opacity="0.6"/>
+  </g>
+</svg>
