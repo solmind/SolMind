@@ -13,18 +13,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.solana.solmind.data.model.AccountMode
+import com.solana.solmind.ui.viewmodel.WalletViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    navController: NavController
+    navController: NavController,
+    walletViewModel: WalletViewModel = hiltViewModel()
 ) {
     var isDarkTheme by remember { mutableStateOf(false) }
     var enableNotifications by remember { mutableStateOf(true) }
     var autoSync by remember { mutableStateOf(true) }
     var syncInterval by remember { mutableStateOf("15 minutes") }
     var showConfidenceScore by remember { mutableStateOf(true) }
+    var showAddWalletDialog by remember { mutableStateOf(false) }
+    
+    val currentAccountMode by walletViewModel.currentAccountMode.collectAsState()
     
     Scaffold(
         topBar = {
@@ -64,6 +71,27 @@ fun SettingsScreen(
                         )
                     }
                 )
+            }
+            
+            // Wallet Management Section
+            if (currentAccountMode == AccountMode.ONCHAIN) {
+                SettingsSection(title = "Wallet Management") {
+                    SettingsItem(
+                        icon = Icons.Default.Add,
+                        title = "Add Wallet",
+                        subtitle = "Add a new Solana wallet address",
+                        onClick = { showAddWalletDialog = true }
+                    )
+                    
+                    SettingsItem(
+                        icon = Icons.Default.AccountCircle,
+                        title = "Manage Wallets",
+                        subtitle = "View and manage your wallets",
+                        onClick = {
+                            navController.navigate("wallet")
+                        }
+                    )
+                }
             }
             
             // Sync Settings Section
@@ -185,6 +213,17 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
+    
+    // Add Wallet Dialog
+    if (showAddWalletDialog) {
+        AddWalletDialog(
+            onDismiss = { showAddWalletDialog = false },
+            onAddWallet = { address, name ->
+                walletViewModel.addWallet(address, name)
+                showAddWalletDialog = false
+            }
+        )
+    }
 }
 
 @Composable
@@ -265,4 +304,82 @@ fun SettingsItem(
         
         trailing?.invoke()
     }
+}
+
+@Composable
+fun AddWalletDialog(
+    onDismiss: () -> Unit,
+    onAddWallet: (String, String) -> Unit
+) {
+    var address by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var addressError by remember { mutableStateOf<String?>(null) }
+    var nameError by remember { mutableStateOf<String?>(null) }
+    
+    fun validateInputs(): Boolean {
+        addressError = when {
+            address.isEmpty() -> "Address is required"
+            address.length < 32 -> "Invalid Solana address"
+            else -> null
+        }
+        
+        nameError = when {
+            name.isEmpty() -> "Name is required"
+            name.length < 2 -> "Name must be at least 2 characters"
+            else -> null
+        }
+        
+        return addressError == null && nameError == null
+    }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Solana Wallet") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { 
+                        name = it
+                        nameError = null
+                    },
+                    label = { Text("Wallet Name") },
+                    isError = nameError != null,
+                    supportingText = nameError?.let { { Text(it) } },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { 
+                        address = it
+                        addressError = null
+                    },
+                    label = { Text("Wallet Address") },
+                    isError = addressError != null,
+                    supportingText = addressError?.let { { Text(it) } },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Enter Solana wallet address...") }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (validateInputs()) {
+                        onAddWallet(address.trim(), name.trim())
+                    }
+                }
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
