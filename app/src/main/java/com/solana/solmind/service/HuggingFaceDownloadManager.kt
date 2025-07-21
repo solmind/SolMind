@@ -1,13 +1,14 @@
 package com.solana.solmind.service
 
 import android.content.Context
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
-import retrofit2.Response
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -40,6 +41,10 @@ class HuggingFaceDownloadManager @Inject constructor(
     private val apiService: HuggingFaceApiService
 ) {
     
+    companion object {
+        private const val TAG = "HuggingFaceDownloadManager"
+    }
+    
     /**
      * Download a model file with progress tracking
      * @param modelId The model identifier for local storage
@@ -55,39 +60,60 @@ class HuggingFaceDownloadManager @Inject constructor(
         authToken: String? = null
     ): Flow<DownloadProgress> = flow {
         try {
+            Log.d(TAG, "Starting download for model: $modelId")
+            Log.d(TAG, "Download URL: $downloadUrl")
+            Log.d(TAG, "File name: $fileName")
+            Log.d(TAG, "Auth token provided: ${authToken != null}")
+            
             // Create model directory
             val modelDir = File(context.filesDir, "models/$modelId")
             if (!modelDir.exists()) {
-                modelDir.mkdirs()
+                val created = modelDir.mkdirs()
+                Log.d(TAG, "Model directory created: $created, path: ${modelDir.absolutePath}")
             }
             
             val modelFile = File(modelDir, fileName)
+            Log.d(TAG, "Target file path: ${modelFile.absolutePath}")
             
             // Make the API call
+            Log.d(TAG, "Making API call to download model file...")
             val response = apiService.downloadModelFile(
                 url = downloadUrl,
                 authToken = authToken?.let { "Bearer $it" }
             )
             
+            Log.d(TAG, "API response received - Code: ${response.code()}, Message: ${response.message()}")
+            
             if (!response.isSuccessful) {
-                throw Exception("Failed to download model: HTTP ${response.code()} - ${response.message()}")
+                val errorMsg = "Failed to download model: HTTP ${response.code()} - ${response.message()}"
+                Log.e(TAG, errorMsg)
+                throw Exception(errorMsg)
             }
             
             val responseBody = response.body()
-                ?: throw Exception("Response body is null")
+            if (responseBody == null) {
+                val errorMsg = "Response body is null"
+                Log.e(TAG, errorMsg)
+                throw Exception(errorMsg)
+            }
             
             // Get content length for progress tracking
             val contentLength = responseBody.contentLength()
+            Log.d(TAG, "Content length: $contentLength bytes")
             
             // Download with progress tracking
             downloadWithProgress(responseBody, modelFile, contentLength) { progress ->
+                Log.v(TAG, "Download progress: ${progress.percentage}% (${progress.bytesDownloaded}/${progress.totalBytes})")
                 emit(progress)
             }
             
+            Log.d(TAG, "Download completed successfully for model: $modelId")
+            
         } catch (e: Exception) {
+            Log.e(TAG, "Download failed for model $modelId: ${e.message}", e)
             throw Exception("Download failed: ${e.message}", e)
         }
-    }
+    }.flowOn(Dispatchers.IO)
     
     /**
      * Download a model file without progress tracking (simpler version)
@@ -194,7 +220,7 @@ class HuggingFaceDownloadManager @Inject constructor(
         targetFile: File,
         contentLength: Long,
         onProgress: suspend (DownloadProgress) -> Unit
-    ) = withContext(Dispatchers.IO) {
+    ) {
         val inputStream: InputStream = responseBody.byteStream()
         val outputStream = FileOutputStream(targetFile)
         
