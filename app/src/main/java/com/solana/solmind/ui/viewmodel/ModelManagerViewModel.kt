@@ -20,6 +20,7 @@ class ModelManagerViewModel @Inject constructor(
     val selectedModel: StateFlow<LanguageModel> = modelManager.selectedModel
     val modelStates: StateFlow<List<ModelState>> = modelManager.modelStates
     val downloadProgress: StateFlow<Map<String, Float>> = modelManager.downloadProgress
+    val availableModels: StateFlow<List<LanguageModel>> = modelManager.availableModels
     
     fun selectModel(model: LanguageModel) {
         modelManager.selectModel(model)
@@ -59,5 +60,11 @@ class ModelManagerViewModel @Inject constructor(
     
     fun setHuggingFaceAuthEnabled(enabled: Boolean) {
         modelManager.setHuggingFaceAuthEnabled(enabled)
+    }
+    
+    fun refreshModelSizes() {
+        viewModelScope.launch {
+            modelManager.loadAvailableModels()
+        }
     }
 }

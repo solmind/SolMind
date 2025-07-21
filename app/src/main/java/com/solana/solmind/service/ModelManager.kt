@@ -2,12 +2,16 @@ package com.solana.solmind.service
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
@@ -20,6 +24,16 @@ data class LanguageModel(
     val size: String,
     val isDefault: Boolean = false,
     val downloadUrl: String = "",
+    val isLocal: Boolean = true,
+    val requiresSubscription: Boolean = false
+)
+
+data class ModelConfig(
+    val id: String,
+    val name: String,
+    val description: String,
+    val huggingFaceId: String,
+    val fileName: String,
     val isLocal: Boolean = true,
     val requiresSubscription: Boolean = false
 )
@@ -45,6 +59,16 @@ class ModelManager @Inject constructor(
     private val huggingFaceConfig: HuggingFaceConfig
 ) {
     private val prefs: SharedPreferences = context.getSharedPreferences("model_prefs", Context.MODE_PRIVATE)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    
+    init {
+        // Load model sizes from API in the background
+        scope.launch {
+            loadAvailableModels()
+            // Update model states when available models change
+            updateModelStates()
+        }
+    }
     
     private val _selectedModel = MutableStateFlow(getDefaultModel())
     val selectedModel: StateFlow<LanguageModel> = _selectedModel.asStateFlow()
@@ -55,49 +79,182 @@ class ModelManager @Inject constructor(
     private val _downloadProgress = MutableStateFlow<Map<String, Float>>(emptyMap())
     val downloadProgress: StateFlow<Map<String, Float>> = _downloadProgress.asStateFlow()
     
+    // Cache for model sizes to avoid repeated API calls
+    private val modelSizeCache = mutableMapOf<String, String>()
+    
+    // StateFlow for available models with dynamic sizes
+    private val _availableModels = MutableStateFlow<List<LanguageModel>>(emptyList())
+    val availableModels: StateFlow<List<LanguageModel>> = _availableModels.asStateFlow()
+    
     companion object {
         private const val SELECTED_MODEL_KEY = "selected_model_id"
         private const val MODEL_DOWNLOADED_PREFIX = "model_downloaded_"
         
-        val AVAILABLE_MODELS = listOf(
-            LanguageModel(
+        // Base model configurations without hardcoded sizes
+        private val BASE_MODEL_CONFIGS = listOf(
+            ModelConfig(
                 id = "flan-t5-small",
                 name = "FLAN-T5 Small",
                 description = "Compact model for basic transaction parsing",
-                size = "77 MB",
-                downloadUrl = "https://huggingface.co/google/flan-t5-small/resolve/main/pytorch_model.bin",
+                huggingFaceId = "google/flan-t5-small",
+                fileName = "pytorch_model.bin",
                 isLocal = true
             ),
-            LanguageModel(
+            ModelConfig(
                 id = "flan-t5-base",
                 name = "FLAN-T5 Base",
                 description = "Balanced model for general transaction analysis",
-                size = "248 MB",
-                downloadUrl = "https://huggingface.co/google/flan-t5-base/resolve/main/pytorch_model.bin",
+                huggingFaceId = "google/flan-t5-base",
+                fileName = "pytorch_model.bin",
                 isLocal = true
             ),
-            LanguageModel(
+            ModelConfig(
                 id = "distilbert-base",
                 name = "DistilBERT Base",
                 description = "Fast and efficient model for transaction understanding",
-                size = "268 MB",
-                downloadUrl = "https://huggingface.co/distilbert-base-uncased/resolve/main/pytorch_model.bin",
+                huggingFaceId = "distilbert-base-uncased",
+                fileName = "pytorch_model.bin",
                 isLocal = true
             ),
-            LanguageModel(
+            ModelConfig(
                 id = "solmind-cloud",
                 name = "SolMind Cloud AI",
                 description = "Advanced cloud-based AI model with superior accuracy",
-                size = "Cloud",
-                downloadUrl = "",
+                huggingFaceId = "",
+                fileName = "",
                 isLocal = false,
                 requiresSubscription = true
             )
         )
     }
     
+    /**
+     * Get model size from Hugging Face API
+     */
+    private suspend fun getModelSize(huggingFaceId: String, fileName: String): String {
+        return try {
+            // Check cache first
+            val cacheKey = "$huggingFaceId/$fileName"
+            modelSizeCache[cacheKey]?.let { return it }
+            
+            // Fetch from API
+            val filesResult = huggingFaceDownloadManager.getModelFiles(
+                modelId = huggingFaceId,
+                authToken = huggingFaceConfig.getApiToken()
+            )
+            
+            if (filesResult.isSuccess) {
+                val files = filesResult.getOrNull() ?: emptyList()
+                val targetFile = files.find { it.path == fileName }
+                
+                val sizeString = when {
+                    targetFile?.size != null -> {
+                        formatFileSize(targetFile.size)
+                    }
+                    targetFile?.lfs?.size != null -> {
+                        formatFileSize(targetFile.lfs.size)
+                    }
+                    else -> "Unknown"
+                }
+                
+                // Cache the result
+                modelSizeCache[cacheKey] = sizeString
+                sizeString
+            } else {
+                "Unknown"
+            }
+        } catch (e: Exception) {
+            Log.e("ModelManager", "Failed to get model size for $huggingFaceId: ${e.message}")
+            "Unknown"
+        }
+    }
+    
+    /**
+     * Format file size in human-readable format
+     */
+    private fun formatFileSize(bytes: Long): String {
+        return when {
+            bytes >= 1024 * 1024 * 1024 -> String.format("%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0))
+            bytes >= 1024 * 1024 -> String.format("%.0f MB", bytes / (1024.0 * 1024.0))
+            bytes >= 1024 -> String.format("%.0f KB", bytes / 1024.0)
+            else -> "$bytes B"
+        }
+    }
+    
+    /**
+     * Load available models with dynamic sizes from Hugging Face API
+     */
+    suspend fun loadAvailableModels() {
+        withContext(Dispatchers.IO) {
+            val models = BASE_MODEL_CONFIGS.map { config ->
+                val size = if (config.isLocal && config.huggingFaceId.isNotEmpty()) {
+                    getModelSize(config.huggingFaceId, config.fileName)
+                } else {
+                    "Cloud"
+                }
+                
+                val downloadUrl = if (config.isLocal && config.huggingFaceId.isNotEmpty()) {
+                    "https://huggingface.co/${config.huggingFaceId}/resolve/main/${config.fileName}"
+                } else {
+                    ""
+                }
+                
+                LanguageModel(
+                    id = config.id,
+                    name = config.name,
+                    description = config.description,
+                    size = size,
+                    downloadUrl = downloadUrl,
+                    isLocal = config.isLocal,
+                    requiresSubscription = config.requiresSubscription
+                )
+            }
+            
+            _availableModels.value = models
+            // Update model states with new model information
+            updateModelStates()
+        }
+    }
+    
+    /**
+     * Update model states based on current available models
+     */
+    private fun updateModelStates() {
+        val updatedStates = getAvailableModels().map { model ->
+            val isDownloaded = isModelDownloaded(model.id)
+            val existingState = _modelStates.value.find { it.model.id == model.id }
+            
+            ModelState(
+                model = model,
+                status = existingState?.status ?: if (isDownloaded) ModelDownloadStatus.DOWNLOADED else ModelDownloadStatus.NOT_DOWNLOADED,
+                progress = existingState?.progress ?: 0f,
+                error = existingState?.error
+            )
+        }
+        _modelStates.value = updatedStates
+    }
+    
     private fun getAvailableModels(): List<LanguageModel> {
-        return AVAILABLE_MODELS
+        return _availableModels.value.ifEmpty {
+            // Return base models with placeholder sizes if not loaded yet
+            BASE_MODEL_CONFIGS.map { config ->
+                val downloadUrl = if (config.isLocal && config.huggingFaceId.isNotEmpty()) {
+                    "https://huggingface.co/${config.huggingFaceId}/resolve/main/${config.fileName}"
+                } else {
+                    ""
+                }
+                
+                LanguageModel(
+                    id = config.id,
+                    name = config.name,
+                    description = config.description,
+                    size = if (config.isLocal) "Loading..." else "Cloud",
+                    downloadUrl = downloadUrl,
+                    isLocal = config.isLocal,
+                    requiresSubscription = config.requiresSubscription
+                )
+            }
+        }
     }
     
     private fun getDefaultModel(): LanguageModel {
