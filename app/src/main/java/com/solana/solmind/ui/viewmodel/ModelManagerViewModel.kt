@@ -17,12 +17,12 @@ class ModelManagerViewModel @Inject constructor(
     private val modelManager: ModelManager
 ) : ViewModel() {
     
-    val selectedModel: StateFlow<LanguageModel> = modelManager.selectedModel
+    val selectedModel: StateFlow<LanguageModel?> = modelManager.selectedModel
     val modelStates: StateFlow<List<ModelState>> = modelManager.modelStates
     val downloadProgress: StateFlow<Map<String, Float>> = modelManager.downloadProgress
     val availableModels: StateFlow<List<LanguageModel>> = modelManager.availableModels
     
-    fun selectModel(model: LanguageModel) {
+    fun selectModel(model: LanguageModel?) {
         modelManager.selectModel(model)
     }
     

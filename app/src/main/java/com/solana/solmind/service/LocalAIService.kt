@@ -19,6 +19,7 @@ class LocalAIService @Inject constructor(
     suspend fun parseTransactionText(content: String): TransactionParseResult {
         return withContext(Dispatchers.IO) {
             val selectedModel = modelManager.selectedModel.value
+                ?: throw IllegalStateException("No model selected. Please select a model first.")
             
             // Check if the selected model is downloaded
             if (!modelManager.isModelDownloaded(selectedModel.id)) {

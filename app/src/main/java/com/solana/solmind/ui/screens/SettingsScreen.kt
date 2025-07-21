@@ -233,7 +233,7 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Settings,
                     title = "Language Model",
-                    subtitle = "Current: ${selectedModel.name} (${if (modelManagerViewModel.isModelDownloaded(selectedModel.id)) "Downloaded" else "Not Downloaded"})",
+                    subtitle = selectedModel?.let { "Current: ${it.name} (${if (modelManagerViewModel.isModelDownloaded(it.id)) "Downloaded" else "Not Downloaded"})" } ?: "No model selected",
                     onClick = { showModelSelectionDialog = true }
                 )
                 
@@ -537,7 +537,7 @@ fun UpgradeDialog(
 fun ModelSelectionDialog(
     modelManagerViewModel: ModelManagerViewModel,
     modelStates: List<com.solana.solmind.service.ModelState>,
-    selectedModel: LanguageModel,
+    selectedModel: LanguageModel?,
     isSubscribed: Boolean,
     onDismiss: () -> Unit,
     onModelSelected: (LanguageModel) -> Unit,
@@ -569,7 +569,7 @@ fun ModelSelectionDialog(
                 modelStates.forEach { modelState ->
                     ModelItem(
                         modelState = modelState,
-                        isSelected = selectedModel.id == modelState.model.id,
+                        isSelected = selectedModel?.id == modelState.model.id,
                         isSubscribed = isSubscribed,
                         onModelSelected = onModelSelected,
                         onDownloadModel = onDownloadModel,

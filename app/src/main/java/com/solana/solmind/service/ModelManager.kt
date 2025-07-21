@@ -65,19 +65,8 @@ class ModelManager @Inject constructor(
         // Load model sizes from API in the background
         scope.launch {
             loadAvailableModels()
-            // Update model states when available models change
-            updateModelStates()
         }
     }
-    
-    private val _selectedModel = MutableStateFlow(getDefaultModel())
-    val selectedModel: StateFlow<LanguageModel> = _selectedModel.asStateFlow()
-    
-    private val _modelStates = MutableStateFlow(getInitialModelStates())
-    val modelStates: StateFlow<List<ModelState>> = _modelStates.asStateFlow()
-    
-    private val _downloadProgress = MutableStateFlow<Map<String, Float>>(emptyMap())
-    val downloadProgress: StateFlow<Map<String, Float>> = _downloadProgress.asStateFlow()
     
     // Cache for model sizes to avoid repeated API calls
     private val modelSizeCache = mutableMapOf<String, String>()
@@ -85,6 +74,15 @@ class ModelManager @Inject constructor(
     // StateFlow for available models with dynamic sizes
     private val _availableModels = MutableStateFlow<List<LanguageModel>>(emptyList())
     val availableModels: StateFlow<List<LanguageModel>> = _availableModels.asStateFlow()
+    
+    private val _selectedModel = MutableStateFlow<LanguageModel?>(null)
+    val selectedModel: StateFlow<LanguageModel?> = _selectedModel.asStateFlow()
+    
+    private val _modelStates = MutableStateFlow<List<ModelState>>(emptyList())
+    val modelStates: StateFlow<List<ModelState>> = _modelStates.asStateFlow()
+    
+    private val _downloadProgress = MutableStateFlow<Map<String, Float>>(emptyMap())
+    val downloadProgress: StateFlow<Map<String, Float>> = _downloadProgress.asStateFlow()
     
     companion object {
         private const val SELECTED_MODEL_KEY = "selected_model_id"
@@ -211,6 +209,12 @@ class ModelManager @Inject constructor(
             }
             
             _availableModels.value = models
+            
+            // Initialize selected model if not set
+            if (_selectedModel.value == null) {
+                _selectedModel.value = getDefaultModel()
+            }
+            
             // Update model states with new model information
             updateModelStates()
         }
@@ -257,9 +261,14 @@ class ModelManager @Inject constructor(
         }
     }
     
-    private fun getDefaultModel(): LanguageModel {
+    private fun getDefaultModel(): LanguageModel? {
         val savedModelId = prefs.getString(SELECTED_MODEL_KEY, "flan-t5-small")
-        return getAvailableModels().find { it.id == savedModelId } ?: getAvailableModels().first()
+        val availableModels = getAvailableModels()
+        return if (availableModels.isNotEmpty()) {
+            availableModels.find { it.id == savedModelId } ?: availableModels.first()
+        } else {
+            null
+        }
     }
     
     private fun getInitialModelStates(): List<ModelState> {
@@ -272,9 +281,11 @@ class ModelManager @Inject constructor(
         }
     }
     
-    fun selectModel(model: LanguageModel) {
+    fun selectModel(model: LanguageModel?) {
         _selectedModel.value = model
-        prefs.edit().putString(SELECTED_MODEL_KEY, model.id).apply()
+        model?.let {
+            prefs.edit().putString(SELECTED_MODEL_KEY, it.id).apply()
+        }
     }
     
     fun isModelDownloaded(modelId: String): Boolean {
@@ -325,7 +336,7 @@ class ModelManager @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 // Don't allow deleting the currently selected model
-                if (_selectedModel.value.id == modelId) {
+                if (_selectedModel.value?.id == modelId) {
                     return@withContext Result.failure(Exception("Cannot delete currently selected model"))
                 }
                 
