@@ -7,11 +7,20 @@ An AI-powered expense tracking Android app built for the Solana Mobile Hackathon
 ### 🤖 AI-Powered Expense Classification
 - **Smart Text Recognition**: Extract transaction details from receipt photos using ML Kit
 - **Local Language Models**: Choose from multiple AI models (FLAN-T5 Small, DialoGPT Small, DistilBERT Base)
+- **Cloud AI Models**: Access to SolMind Cloud AI with subscription (SolMind Master)
 - **Model Management**: Download, select, and manage AI models directly from settings
 - **Intelligent Categorization**: Automatically categorize expenses using selected AI models
 - **Confidence Scoring**: Display AI confidence levels for categorization accuracy
 - **Manual Override**: Easy manual editing and correction of AI suggestions
 - **Offline AI**: All AI processing runs locally on device for privacy
+
+### 💎 SolMind Master Subscription
+- **Premium Tier**: Upgrade to SolMind Master for enhanced features
+- **Cloud AI Access**: Unlock powerful cloud-based AI models for better accuracy
+- **Development Support**: Support ongoing development and new features
+- **Future Features**: Access to upcoming pro functionality
+- **Special Launch Pricing**: Free upgrade for early adopters
+- **Seamless Integration**: Easy upgrade flow directly from settings
 
 ### 🔗 Solana Blockchain Integration
 - **Wallet Management**: Add and manage multiple Solana wallet addresses
@@ -76,7 +85,15 @@ app/src/main/java/com/solana/ailedger/
 - Local language model selection and management
 - Model download progress tracking
 - Support for multiple AI models (FLAN-T5, DialoGPT, DistilBERT)
+- Cloud AI model integration (SolMind Cloud AI)
 - Model deletion and storage management
+
+### Subscription Manager (`SubscriptionManager.kt`)
+- SolMind Master subscription tier management
+- Upgrade and cancellation functionality
+- Subscription status tracking
+- Benefits and pricing management
+- Integration with cloud AI model access
 
 ### Solana Service (`SolanaService.kt`)
 - Solana RPC integration
