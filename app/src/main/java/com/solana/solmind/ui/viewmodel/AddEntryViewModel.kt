@@ -50,7 +50,8 @@ data class ChatMessage(
 class AddEntryViewModel @Inject constructor(
     private val repository: LedgerRepository,
     private val accountModeManager: AccountModeManager,
-    private val aiService: com.solana.solmind.service.AIService
+    private val aiService: com.solana.solmind.service.AIService,
+    private val chatbotService: com.solana.solmind.service.ChatbotService
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(AddEntryUiState())
@@ -246,15 +247,13 @@ class AddEntryViewModel @Inject constructor(
     private fun processUserMessage(message: String) {
         viewModelScope.launch {
             try {
-                // Simulate AI processing
-                kotlinx.coroutines.delay(1500)
-                
-                // Use existing AI service to analyze the message
+                // First, try to extract transaction data
                 val suggestion = repository.createEntryFromText(
                     message, 
                     accountMode = accountModeManager.getCurrentAccountMode()
                 )
                 
+                // Generate AI response using the chatbot service
                 val aiResponse = if (suggestion != null) {
                     // Update the transaction data
                     _uiState.value = _uiState.value.copy(
@@ -265,14 +264,12 @@ class AddEntryViewModel @Inject constructor(
                         confidence = suggestion.confidence
                     )
                     
-                    "I've analyzed your transaction! I found:\n\n" +
-                    "💰 Amount: $${suggestion.amount}\n" +
-                    "📝 Description: ${suggestion.description}\n" +
-                    "📊 Type: ${suggestion.type.name.lowercase().capitalize()}\n" +
-                    "🏷️ Category: ${suggestion.category.getDisplayName()}\n\n" +
-                    "Would you like to review and confirm this transaction?"
+                    // Generate contextual response about the transaction
+                    val transactionContext = "I found a transaction: ${suggestion.description} for $${suggestion.amount} in ${suggestion.category.getDisplayName()} category."
+                    chatbotService.generateResponse("$message\n\nContext: $transactionContext")
                 } else {
-                    "I couldn't extract transaction details from your message. Could you please provide more specific information like the amount and what the transaction was for?"
+                    // Generate conversational response using the chatbot
+                    chatbotService.generateResponse(message)
                 }
                 
                 val assistantMessage = ChatMessage(content = aiResponse, isUser = false)
@@ -378,5 +375,11 @@ class AddEntryViewModel @Inject constructor(
     
     fun resetChat() {
         _uiState.value = AddEntryUiState()
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        // Clean up the chatbot service resources
+        chatbotService.clearModel()
     }
 }
