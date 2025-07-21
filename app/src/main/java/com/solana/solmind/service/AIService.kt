@@ -14,7 +14,8 @@ import kotlin.coroutines.suspendCoroutine
 
 @Singleton
 class AIService @Inject constructor(
-    private val context: Context
+    private val context: Context,
+    private val localAIService: LocalAIService
 ) {
     
     private val textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
@@ -140,6 +141,17 @@ class AIService @Inject constructor(
         }
         
         return null
+    }
+    
+    /**
+     * Parse transaction text using local FLAN-T5-small model
+     * This method uses the prompt: "You are given a piece of text describing a ledger change: [CONTENT], 
+     * please choose appropriate category of: spend or income;amount;the category among one of 
+     * [FOOD_DINING,TRANSPORTATION,SHOPPING,ENTERTAINMENT,UTILITIES,HEALTHCARE,EDUCATION,TRAVEL,INVESTMENT,SALARY,FREELANCE,BUSINESS,GIFTS,OTHER], 
+     * output with 3 pieces split by ;"
+     */
+    suspend fun parseTransactionWithAI(content: String): TransactionParseResult {
+        return localAIService.parseTransactionText(content)
     }
 }
 

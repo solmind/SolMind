@@ -71,19 +71,22 @@ class LedgerRepository @Inject constructor(
         accountMode: AccountMode
     ): Double = ledgerDao.getTotalAmountByTypeAndDateRangeAndAccountMode(type, startDate, endDate, accountMode) ?: 0.0
     
-    // AI-powered entry creation
+    // AI-powered entry creation using FLAN-T5-small model
     suspend fun createEntryFromText(text: String, amount: Double? = null, accountMode: AccountMode = AccountMode.OFFCHAIN): LedgerEntry {
-        val prediction = aiService.categorizeTransaction(text)
-        val extractedAmount = amount ?: aiService.extractAmountFromText(text) ?: 0.0
+        // Use the new LocalAIService with FLAN-T5-small model for intelligent parsing
+        val parseResult = aiService.parseTransactionWithAI(text)
+        
+        // Use provided amount or extracted amount from AI, fallback to manual extraction
+        val finalAmount = amount ?: parseResult.amount.takeIf { it > 0.0 } ?: aiService.extractAmountFromText(text) ?: 0.0
         
         return LedgerEntry(
-            amount = extractedAmount,
+            amount = finalAmount,
             description = text,
-            category = prediction.category,
-            type = prediction.type,
+            category = parseResult.category,
+            type = parseResult.type,
             date = Date(),
             accountMode = accountMode,
-            confidence = prediction.confidence,
+            confidence = parseResult.confidence,
             isAutoDetected = true
         )
     }

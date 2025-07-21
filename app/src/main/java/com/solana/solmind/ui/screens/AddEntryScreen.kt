@@ -101,6 +101,7 @@ fun AddEntryScreen(
                 isLoading = uiState.isProcessingMessage,
                 onSendMessage = { message -> viewModel.sendMessage(message) },
                 onSelectImage = { viewModel.selectImage() },
+                onTestFlanT5 = { testMessage -> viewModel.parseWithFlanT5(testMessage) },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
@@ -115,6 +116,7 @@ fun ChatInterface(
     isLoading: Boolean,
     onSendMessage: (String) -> Unit,
     onSelectImage: () -> Unit,
+    onTestFlanT5: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var messageText by remember { mutableStateOf("") }
@@ -125,7 +127,7 @@ fun ChatInterface(
     ) {
         // Welcome message if no chat messages
         if (chatMessages.isEmpty()) {
-            WelcomeMessage()
+            WelcomeMessage(onTestFlanT5 = onTestFlanT5)
         }
         
         // Chat messages
@@ -218,7 +220,9 @@ fun ChatInterface(
 }
 
 @Composable
-fun WelcomeMessage() {
+fun WelcomeMessage(
+    onTestFlanT5: ((String) -> Unit)? = null
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -251,6 +255,49 @@ fun WelcomeMessage() {
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
+            
+            if (onTestFlanT5 != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "✨ Powered by FLAN-T5-small AI Model",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Test buttons for FLAN-T5 model
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Button(
+                        onClick = { onTestFlanT5("Bought coffee for $4.50 at Starbucks") },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
+                        )
+                    ) {
+                        Text(
+                            text = "Test: Coffee",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                    
+                    Button(
+                        onClick = { onTestFlanT5("Received salary payment of $3000") },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiary
+                        )
+                    ) {
+                        Text(
+                            text = "Test: Salary",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+            }
         }
     }
 }

@@ -19,6 +19,9 @@ import androidx.navigation.NavController
 import com.solana.solmind.data.manager.ThemeMode
 import com.solana.solmind.data.manager.ThemePreferenceManager
 import com.solana.solmind.data.model.AccountMode
+import com.solana.solmind.service.ModelManager
+import com.solana.solmind.service.LanguageModel
+import com.solana.solmind.service.ModelDownloadStatus
 import com.solana.solmind.ui.viewmodel.WalletViewModel
 import kotlinx.coroutines.launch
 
@@ -30,6 +33,8 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val themePreferenceManager = remember { ThemePreferenceManager(context) }
+    val modelManager = remember { ModelManager(context) }
+    
     var enableNotifications by remember { mutableStateOf(true) }
     var autoSync by remember { mutableStateOf(true) }
     var syncInterval by remember { mutableStateOf("15 minutes") }
@@ -37,10 +42,13 @@ fun SettingsScreen(
     var showAddWalletDialog by remember { mutableStateOf(false) }
     var showOnchainThemeDialog by remember { mutableStateOf(false) }
     var showOffchainThemeDialog by remember { mutableStateOf(false) }
+    var showModelSelectionDialog by remember { mutableStateOf(false) }
     
     val currentAccountMode by walletViewModel.currentAccountMode.collectAsState()
     val onchainThemeMode by themePreferenceManager.onchainThemeMode.collectAsState(initial = ThemeMode.LIGHT)
     val offchainThemeMode by themePreferenceManager.offchainThemeMode.collectAsState(initial = ThemeMode.DARK)
+    val selectedModel by modelManager.selectedModel.collectAsState()
+    val modelStates by modelManager.modelStates.collectAsState()
     
     val coroutineScope = rememberCoroutineScope()
     
@@ -138,6 +146,13 @@ fun SettingsScreen(
             
             // AI Settings Section
             SettingsSection(title = "AI Settings") {
+                SettingsItem(
+                    icon = Icons.Default.Settings,
+                    title = "Language Model",
+                    subtitle = "Current: ${selectedModel.name} (${if (modelManager.isModelDownloaded(selectedModel.id)) "Downloaded" else "Not Downloaded"})",
+                    onClick = { showModelSelectionDialog = true }
+                )
+                
                 SettingsItem(
                     icon = Icons.Default.Star,
                     title = "Show Confidence Score",
@@ -268,6 +283,225 @@ fun SettingsScreen(
                 showAddWalletDialog = false
             }
         )
+    }
+    
+    // Model Selection Dialog
+    if (showModelSelectionDialog) {
+        ModelSelectionDialog(
+            modelManager = modelManager,
+            modelStates = modelStates,
+            selectedModel = selectedModel,
+            onDismiss = { showModelSelectionDialog = false },
+            onModelSelected = { model ->
+                modelManager.selectModel(model)
+                showModelSelectionDialog = false
+            },
+            onDownloadModel = { modelId ->
+                coroutineScope.launch {
+                    modelManager.downloadModel(modelId)
+                }
+            },
+            onDeleteModel = { modelId ->
+                coroutineScope.launch {
+                    modelManager.deleteModel(modelId)
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun ModelSelectionDialog(
+    modelManager: ModelManager,
+    modelStates: List<com.solana.solmind.service.ModelState>,
+    selectedModel: LanguageModel,
+    onDismiss: () -> Unit,
+    onModelSelected: (LanguageModel) -> Unit,
+    onDownloadModel: (String) -> Unit,
+    onDeleteModel: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { 
+            Text(
+                text = "Select Language Model",
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Choose a local AI model for transaction parsing:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                modelStates.forEach { modelState ->
+                    ModelItem(
+                        modelState = modelState,
+                        isSelected = selectedModel.id == modelState.model.id,
+                        onModelSelected = onModelSelected,
+                        onDownloadModel = onDownloadModel,
+                        onDeleteModel = onDeleteModel
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done")
+            }
+        }
+    )
+}
+
+@Composable
+fun ModelItem(
+    modelState: com.solana.solmind.service.ModelState,
+    isSelected: Boolean,
+    onModelSelected: (LanguageModel) -> Unit,
+    onDownloadModel: (String) -> Unit,
+    onDeleteModel: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) 
+                MaterialTheme.colorScheme.primaryContainer 
+            else 
+                MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(
+                            selected = isSelected,
+                            onClick = { 
+                                if (modelState.status == ModelDownloadStatus.DOWNLOADED) {
+                                    onModelSelected(modelState.model)
+                                }
+                            },
+                            enabled = modelState.status == ModelDownloadStatus.DOWNLOADED
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = modelState.model.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (modelState.model.isDefault) {
+                                Text(
+                                    text = "Default",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = modelState.model.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Text(
+                        text = "Size: ${modelState.model.size}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                // Action button
+                when (modelState.status) {
+                    ModelDownloadStatus.NOT_DOWNLOADED -> {
+                        Button(
+                            onClick = { onDownloadModel(modelState.model.id) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(
+                                 Icons.Default.Add,
+                                 contentDescription = null,
+                                 modifier = Modifier.size(16.dp)
+                             )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Download")
+                        }
+                    }
+                    
+                    ModelDownloadStatus.DOWNLOADING -> {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(
+                                progress = modelState.progress,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "${(modelState.progress * 100).toInt()}%",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                    
+                    ModelDownloadStatus.DOWNLOADED -> {
+                        Row {
+                            if (!isSelected) {
+                                IconButton(
+                                    onClick = { onDeleteModel(modelState.model.id) }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Delete model",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = "Downloaded",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    
+                    ModelDownloadStatus.ERROR -> {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                 Icons.Default.Warning,
+                                 contentDescription = "Error",
+                                 tint = MaterialTheme.colorScheme.error,
+                                 modifier = Modifier.size(24.dp)
+                             )
+                            Text(
+                                text = "Error",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -49,7 +49,8 @@ data class ChatMessage(
 @HiltViewModel
 class AddEntryViewModel @Inject constructor(
     private val repository: LedgerRepository,
-    private val accountModeManager: AccountModeManager
+    private val accountModeManager: AccountModeManager,
+    private val aiService: com.solana.solmind.service.AIService
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(AddEntryUiState())
@@ -116,6 +117,40 @@ class AddEntryViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     error = "Failed to get AI suggestion: ${e.message}"
+                )
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    /**
+     * Parse transaction text using FLAN-T5-small model
+     * Uses the prompt: "You are given a piece of text describing a ledger change: [CONTENT], 
+     * please choose appropriate category of: spend or income;amount;the category among one of 
+     * [FOOD_DINING,TRANSPORTATION,SHOPPING,ENTERTAINMENT,UTILITIES,HEALTHCARE,EDUCATION,TRAVEL,INVESTMENT,SALARY,FREELANCE,BUSINESS,GIFTS,OTHER], 
+     * output with 3 pieces split by ;"
+     */
+    fun parseWithFlanT5(content: String) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _uiState.value = _uiState.value.copy(error = null)
+                
+                // Use the FLAN-T5-small model directly
+                val parseResult = aiService.parseTransactionWithAI(content)
+                
+                _uiState.value = _uiState.value.copy(
+                    amount = if (parseResult.amount > 0.0) parseResult.amount.toString() else _uiState.value.amount,
+                    description = content,
+                    transactionType = parseResult.type,
+                    category = parseResult.category,
+                    confidence = parseResult.confidence
+                )
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Failed to parse with FLAN-T5: ${e.message}"
                 )
             } finally {
                 _isLoading.value = false
