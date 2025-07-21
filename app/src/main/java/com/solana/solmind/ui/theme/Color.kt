@@ -42,3 +42,23 @@ val SalaryColor = Color(0xFF8BC34A)
 val BusinessColor = Color(0xFF795548)
 val GiftsColor = Color(0xFFFF5722)
 val OtherColor = Color(0xFF9E9E9E)
+
+// Onchain Mode Colors (Light Theme)
+val OnchainBackground = Color(0xFFFAFAFA)
+val OnchainSurface = Color(0xFFFFFFFF)
+val OnchainPrimary = SolanaPurple
+val OnchainSecondary = SolanaGreen
+val OnchainTertiary = SolanaBlue
+val OnchainOnBackground = Color(0xFF1A1A1A)
+val OnchainOnSurface = Color(0xFF1A1A1A)
+val OnchainSurfaceVariant = Color(0xFFF5F5F5)
+
+// Offchain Mode Colors (Dark Theme)
+val OffchainBackground = Color(0xFF0D0D0D)
+val OffchainSurface = Color(0xFF1A1A1A)
+val OffchainPrimary = Color(0xFF6B46C1)
+val OffchainSecondary = Color(0xFF10B981)
+val OffchainTertiary = Color(0xFF3B82F6)
+val OffchainOnBackground = Color(0xFFE5E5E5)
+val OffchainOnSurface = Color(0xFFE5E5E5)
+val OffchainSurfaceVariant = Color(0xFF2A2A2A)

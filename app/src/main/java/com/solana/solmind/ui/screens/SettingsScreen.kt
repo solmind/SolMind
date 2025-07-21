@@ -11,12 +11,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.solana.solmind.data.manager.ThemeMode
+import com.solana.solmind.data.manager.ThemePreferenceManager
 import com.solana.solmind.data.model.AccountMode
 import com.solana.solmind.ui.viewmodel.WalletViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,14 +28,21 @@ fun SettingsScreen(
     navController: NavController,
     walletViewModel: WalletViewModel = hiltViewModel()
 ) {
-    var isDarkTheme by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val themePreferenceManager = remember { ThemePreferenceManager(context) }
     var enableNotifications by remember { mutableStateOf(true) }
     var autoSync by remember { mutableStateOf(true) }
     var syncInterval by remember { mutableStateOf("15 minutes") }
     var showConfidenceScore by remember { mutableStateOf(true) }
     var showAddWalletDialog by remember { mutableStateOf(false) }
+    var showOnchainThemeDialog by remember { mutableStateOf(false) }
+    var showOffchainThemeDialog by remember { mutableStateOf(false) }
     
     val currentAccountMode by walletViewModel.currentAccountMode.collectAsState()
+    val onchainThemeMode by themePreferenceManager.onchainThemeMode.collectAsState(initial = ThemeMode.LIGHT)
+    val offchainThemeMode by themePreferenceManager.offchainThemeMode.collectAsState(initial = ThemeMode.DARK)
+    
+    val coroutineScope = rememberCoroutineScope()
     
     Scaffold(
         topBar = {
@@ -46,20 +57,25 @@ fun SettingsScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
-            // App Settings Section
-            SettingsSection(title = "App Settings") {
+            // Theme Settings Section
+            SettingsSection(title = "Theme Settings") {
                 SettingsItem(
                     icon = Icons.Default.Settings,
-                    title = "Dark Theme",
-                    subtitle = "Use dark theme for the app",
-                    trailing = {
-                        Switch(
-                            checked = isDarkTheme,
-                            onCheckedChange = { isDarkTheme = it }
-                        )
-                    }
+                    title = "Onchain Mode Theme",
+                    subtitle = "Theme for onchain mode: ${onchainThemeMode.name.lowercase().replaceFirstChar { it.uppercase() }}",
+                    onClick = { showOnchainThemeDialog = true }
                 )
                 
+                SettingsItem(
+                    icon = Icons.Default.Settings,
+                    title = "Offchain Mode Theme",
+                    subtitle = "Theme for offchain mode: ${offchainThemeMode.name.lowercase().replaceFirstChar { it.uppercase() }}",
+                    onClick = { showOffchainThemeDialog = true }
+                )
+            }
+            
+            // App Settings Section
+            SettingsSection(title = "App Settings") {
                 SettingsItem(
                     icon = Icons.Default.Notifications,
                     title = "Notifications",
@@ -214,6 +230,35 @@ fun SettingsScreen(
         }
     }
     
+    // Theme Selection Dialogs
+    if (showOnchainThemeDialog) {
+        ThemeSelectionDialog(
+            title = "Onchain Mode Theme",
+            currentTheme = onchainThemeMode,
+            onDismiss = { showOnchainThemeDialog = false },
+            onThemeSelected = { theme ->
+                coroutineScope.launch {
+                    themePreferenceManager.setOnchainTheme(theme)
+                }
+                showOnchainThemeDialog = false
+            }
+        )
+    }
+    
+    if (showOffchainThemeDialog) {
+        ThemeSelectionDialog(
+            title = "Offchain Mode Theme",
+            currentTheme = offchainThemeMode,
+            onDismiss = { showOffchainThemeDialog = false },
+            onThemeSelected = { theme ->
+                coroutineScope.launch {
+                    themePreferenceManager.setOffchainTheme(theme)
+                }
+                showOffchainThemeDialog = false
+            }
+        )
+    }
+    
     // Add Wallet Dialog
     if (showAddWalletDialog) {
         AddWalletDialog(
@@ -224,6 +269,58 @@ fun SettingsScreen(
             }
         )
     }
+}
+
+@Composable
+fun ThemeSelectionDialog(
+    title: String,
+    currentTheme: ThemeMode,
+    onDismiss: () -> Unit,
+    onThemeSelected: (ThemeMode) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                ThemeMode.values().forEach { theme ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onThemeSelected(theme) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = currentTheme == theme,
+                            onClick = { onThemeSelected(theme) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = theme.name.lowercase().replaceFirstChar { it.uppercase() },
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = when (theme) {
+                                    ThemeMode.LIGHT -> "Always use light theme"
+                                    ThemeMode.DARK -> "Always use dark theme"
+                                    ThemeMode.SYSTEM -> "Follow system setting"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done")
+            }
+        }
+    )
 }
 
 @Composable

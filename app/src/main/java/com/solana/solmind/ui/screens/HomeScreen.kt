@@ -22,6 +22,7 @@ import com.solana.solmind.data.model.AccountMode
 import com.solana.solmind.data.model.LedgerEntry
 import com.solana.solmind.data.model.TransactionCategory
 import com.solana.solmind.data.model.TransactionType
+import com.solana.solmind.ui.components.AnimatedModeSwitcher
 import com.solana.solmind.ui.theme.*
 import com.solana.solmind.ui.viewmodel.HomeViewModel
 import java.text.NumberFormat
@@ -48,35 +49,18 @@ fun HomeScreen(
     ) {
         item {
             // Account Mode Switcher
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.End
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        onClick = { viewModel.setAccountMode(AccountMode.OFFCHAIN) },
-                        label = {
-                            Text("Offchain")
-                        },
-                        selected = currentAccountMode == AccountMode.OFFCHAIN,
-                        modifier = Modifier.weight(1f)
-                    )
-                    FilterChip(
-                        onClick = { viewModel.setAccountMode(AccountMode.ONCHAIN) },
-                        label = {
-                            Text("Onchain")
-                        },
-                        selected = currentAccountMode == AccountMode.ONCHAIN,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                AnimatedModeSwitcher(
+                    currentMode = currentAccountMode,
+                    onModeChange = { newMode ->
+                        viewModel.setAccountMode(newMode)
+                    }
+                )
             }
         }
         
