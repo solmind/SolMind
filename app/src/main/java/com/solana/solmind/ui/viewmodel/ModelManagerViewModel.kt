@@ -64,7 +64,13 @@ class ModelManagerViewModel @Inject constructor(
     
     fun refreshModelSizes() {
         viewModelScope.launch {
-            modelManager.loadAvailableModels()
+            modelManager.loadModelSizes()
+        }
+    }
+    
+    fun loadModelSizes() {
+        viewModelScope.launch {
+            modelManager.loadModelSizes()
         }
     }
 }

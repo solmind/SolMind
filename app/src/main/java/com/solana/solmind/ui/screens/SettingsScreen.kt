@@ -234,7 +234,10 @@ fun SettingsScreen(
                     icon = Icons.Default.Settings,
                     title = "Language Model",
                     subtitle = selectedModel?.let { "Current: ${it.name} (${if (modelManagerViewModel.isModelDownloaded(it.id)) "Downloaded" else "Not Downloaded"})" } ?: "No model selected",
-                    onClick = { showModelSelectionDialog = true }
+                    onClick = { 
+                        modelManagerViewModel.loadModelSizes()
+                        showModelSelectionDialog = true 
+                    }
                 )
                 
                 SettingsItem(

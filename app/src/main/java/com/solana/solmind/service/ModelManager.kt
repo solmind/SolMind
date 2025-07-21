@@ -180,17 +180,11 @@ class ModelManager @Inject constructor(
     }
     
     /**
-     * Load available models with dynamic sizes from Hugging Face API
+     * Load available models without fetching sizes (sizes loaded on demand)
      */
     suspend fun loadAvailableModels() {
         withContext(Dispatchers.IO) {
             val models = BASE_MODEL_CONFIGS.map { config ->
-                val size = if (config.isLocal && config.huggingFaceId.isNotEmpty()) {
-                    getModelSize(config.huggingFaceId, config.fileName)
-                } else {
-                    "Cloud"
-                }
-                
                 val downloadUrl = if (config.isLocal && config.huggingFaceId.isNotEmpty()) {
                     "https://huggingface.co/${config.huggingFaceId}/resolve/main/${config.fileName}"
                 } else {
@@ -201,7 +195,7 @@ class ModelManager @Inject constructor(
                     id = config.id,
                     name = config.name,
                     description = config.description,
-                    size = size,
+                    size = if (config.isLocal) "Loading..." else "Cloud",
                     downloadUrl = downloadUrl,
                     isLocal = config.isLocal,
                     requiresSubscription = config.requiresSubscription
@@ -216,6 +210,30 @@ class ModelManager @Inject constructor(
             }
             
             // Update model states with new model information
+            updateModelStates()
+        }
+    }
+    
+    /**
+     * Load model sizes dynamically when needed (e.g., when showing model list)
+     */
+    suspend fun loadModelSizes() {
+        withContext(Dispatchers.IO) {
+            val updatedModels = _availableModels.value.map { model ->
+                if (model.isLocal && model.size == "Loading...") {
+                    val config = BASE_MODEL_CONFIGS.find { it.id == model.id }
+                    val size = if (config != null && config.huggingFaceId.isNotEmpty()) {
+                        getModelSize(config.huggingFaceId, config.fileName)
+                    } else {
+                        "Unknown"
+                    }
+                    model.copy(size = size)
+                } else {
+                    model
+                }
+            }
+            
+            _availableModels.value = updatedModels
             updateModelStates()
         }
     }
