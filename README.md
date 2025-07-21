@@ -19,7 +19,9 @@ An AI-powered expense tracking Android app built for the Solana Mobile Hackathon
 ### 📱 Modern Android UI
 - **Material 3 Design**: Beautiful, modern interface following Material Design guidelines
 - **Jetpack Compose**: Built with the latest Android UI toolkit
-- **Dark/Light Theme**: Adaptive theming support
+- **Advanced Theme System**: Separate theme preferences for on-chain and off-chain modes
+- **Animated Mode Switcher**: Smooth transitions between on-chain and off-chain modes
+- **Multiple Theme Options**: Light, Dark, and System theme modes for each account type
 - **Responsive Layout**: Optimized for various screen sizes
 
 ### 📊 Comprehensive Tracking
@@ -35,6 +37,7 @@ An AI-powered expense tracking Android app built for the Solana Mobile Hackathon
 - **Architecture**: MVVM with Repository Pattern
 - **Dependency Injection**: Hilt
 - **Database**: Room (SQLite)
+- **Preferences**: DataStore for theme and user preferences
 - **AI/ML**: ML Kit for text recognition
 - **Blockchain**: Solana Web3.js integration
 - **Camera**: CameraX

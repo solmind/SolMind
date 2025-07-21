@@ -139,3 +139,113 @@ This session involved a comprehensive rebranding of the Android app from "AI Led
 - All package references updated consistently
 - Maintained full functionality while updating identity
 - Ready for build and deployment with new branding
+
+---
+
+# Theme Switching Implementation Session
+
+## Overview
+This session involved implementing a comprehensive theme switching system for the SolMind app, allowing users to set different themes for on-chain and off-chain modes with persistent storage.
+
+## Features Implemented
+
+### 1. Animated Mode Switcher Component
+**New File**: `AnimatedModeSwitcher.kt`
+- Beautiful floating action button with smooth animations
+- Icons for on-chain (AccountCircle) and off-chain (Settings) modes
+- Smooth color transitions and scaling animations
+- Integrated into HomeScreen replacing old FilterChip switcher
+
+### 2. Theme Preference Management
+**New File**: `ThemePreferenceManager.kt`
+- DataStore-based persistent storage for theme preferences
+- Separate theme settings for on-chain and off-chain modes
+- Support for Light, Dark, and System theme modes
+- Reactive Flow-based state management
+
+### 3. Enhanced Settings Screen
+**Updated**: `SettingsScreen.kt`
+- Added "Theme Settings" section
+- Individual theme selection for on-chain and off-chain modes
+- Theme selection dialogs with radio button interface
+- Real-time theme mode display
+
+### 4. Advanced Theme System
+**Updated**: `Theme.kt`
+- Integration with ThemePreferenceManager
+- Dynamic theme switching based on account mode
+- Animated color transitions between themes
+- System theme support with proper fallbacks
+
+### 5. Dependency Integration
+**Updated Files**:
+- `MainActivity.kt`: Added ThemePreferenceManager injection
+- `build.gradle`: Added DataStore preferences dependency
+
+## Technical Implementation
+
+### Theme Modes Supported
+- **LIGHT**: Light theme for better visibility
+- **DARK**: Dark theme for low-light environments
+- **SYSTEM**: Follows device system theme settings
+
+### Default Theme Configuration
+- **On-chain mode**: Light theme (default)
+- **Off-chain mode**: Dark theme (default)
+- Users can customize both independently
+
+### Data Persistence
+- Uses AndroidX DataStore for preference storage
+- Preferences persist across app restarts
+- Type-safe preference keys and values
+
+## Build Process
+
+### Compilation Issues Resolved
+1. **Missing DataStore dependency**: Added `androidx.datastore:datastore-preferences:1.0.0`
+2. **Icon reference errors**: Replaced unavailable icons with standard Material icons
+3. **Type inference issues**: Added explicit type annotations for lambda parameters
+4. **Import conflicts**: Resolved duplicate and missing imports
+
+### Final Build Status
+✅ **BUILD SUCCESSFUL**
+- All compilation errors resolved
+- App successfully installed on device
+- Theme switching functionality fully operational
+
+## Files Created/Modified
+
+### New Files
+- `app/src/main/java/com/solana/solmind/ui/components/AnimatedModeSwitcher.kt`
+- `app/src/main/java/com/solana/solmind/data/manager/ThemePreferenceManager.kt`
+
+### Modified Files
+- `app/src/main/java/com/solana/solmind/ui/screens/HomeScreen.kt`
+- `app/src/main/java/com/solana/solmind/ui/screens/SettingsScreen.kt`
+- `app/src/main/java/com/solana/solmind/ui/theme/Theme.kt`
+- `app/src/main/java/com/solana/solmind/MainActivity.kt`
+- `app/build.gradle`
+- `README.md`
+
+## User Experience Enhancements
+
+### Visual Improvements
+- Smooth animations for mode switching
+- Consistent color schemes for each mode
+- Intuitive settings interface
+- Real-time theme preview
+
+### Functionality
+- Independent theme control for different account modes
+- Persistent user preferences
+- System theme integration
+- Seamless theme transitions
+
+## Result
+✅ **THEME SWITCHING COMPLETE**
+- Advanced theme system successfully implemented
+- Separate theme preferences for on-chain/off-chain modes
+- Beautiful animated mode switcher component
+- Persistent storage with DataStore
+- Enhanced user experience with smooth transitions
+- App ready for testing and deployment
