@@ -9,7 +9,16 @@ An AI-powered expense tracking Android app built for the Solana Mobile Hackathon
 - **Local Language Models**: Choose from multiple AI models (FLAN-T5 Small, DialoGPT Small, DistilBERT Base)
 - **Cloud AI Models**: Access to SolMind Cloud AI with subscription (SolMind Master)
 - **Model Management**: Download, select, and manage AI models directly from settings
-- **Intelligent Categorization**: Automatically categorize expenses using selected AI models
+- **Comprehensive Field Inference**: Automatically extract 5 key fields from user input:
+  - Transaction type (income/expense)
+  - Amount (with enhanced pattern recognition)
+  - Category (intelligent keyword matching)
+  - Description (cleaned and formatted from input)
+  - Date (parsed from text or defaults to current date)
+- **Enhanced Amount Extraction**: Advanced regex patterns for detecting amounts in various formats ($123.45, 123.45$, etc.)
+- **Smart Description Generation**: Intelligently cleans input text to create meaningful transaction descriptions
+- **Flexible Date Parsing**: Supports multiple date formats (YYYY-MM-DD, MM/DD/YYYY, MM-DD-YYYY)
+- **Intelligent Categorization**: Automatically categorize expenses using selected AI models with improved keyword matching
 - **Confidence Scoring**: Display AI confidence levels for categorization accuracy
 - **Manual Override**: Easy manual editing and correction of AI suggestions
 - **Offline AI**: All AI processing runs locally on device for privacy
@@ -77,9 +86,15 @@ app/src/main/java/com/solana/ailedger/
 ### AI Service (`AIService.kt` & `LocalAIService.kt`)
 - Text extraction from images using ML Kit
 - Local AI model inference using PyTorch/ExecuTorch
+- **Enhanced Transaction Parsing**: Comprehensive field extraction including:
+  - Transaction type inference (income vs expense)
+  - Advanced amount extraction with multiple regex patterns
+  - Intelligent category matching with expanded keyword sets
+  - Smart description generation from cleaned input text
+  - Flexible date parsing supporting various formats
 - Transaction categorization using selected language models
-- Amount and date extraction from text
-- Confidence scoring for AI predictions
+- Confidence scoring for AI predictions based on field completeness
+- Helper functions for `extractDescription()` and `extractDate()`
 
 ### Model Manager (`ModelManager.kt`)
 - Local language model selection and management

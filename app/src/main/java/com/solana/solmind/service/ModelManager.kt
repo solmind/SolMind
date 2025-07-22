@@ -101,26 +101,34 @@ class ModelManager @Inject constructor(
                 isLocal = true
             ),
             ModelConfig(
-                id = "flan-t5-small",
-                name = "FLAN-T5 Small",
-                description = "Compact model for basic transaction parsing",
-                huggingFaceId = "google/flan-t5-small",
+                id = "tinyllama-1.1b-chat",
+                name = "TinyLlama 1.1B Chat",
+                description = "Compact 1.1B parameter chat model optimized for LiteRT",
+                huggingFaceId = "litert-community/TinyLlama-1.1B-Chat",
                 fileName = "model.tflite",
                 isLocal = true
             ),
             ModelConfig(
-                id = "flan-t5-base",
-                name = "FLAN-T5 Base",
-                description = "Balanced model for general transaction analysis",
-                huggingFaceId = "google/flan-t5-base",
+                id = "gemma3-1b-it",
+                name = "Gemma3 1B IT",
+                description = "Google's Gemma 3 1B instruction-tuned model optimized for LiteRT",
+                huggingFaceId = "litert-community/Gemma3-1B-IT",
                 fileName = "model.tflite",
                 isLocal = true
             ),
             ModelConfig(
-                id = "distilbert-base",
-                name = "DistilBERT Base",
-                description = "Fast and efficient model for transaction understanding",
-                huggingFaceId = "distilbert-base-uncased",
+                id = "phi-4-mini-instruct",
+                name = "Phi-4 Mini Instruct",
+                description = "Microsoft's Phi-4 mini instruction model for LiteRT deployment",
+                huggingFaceId = "litert-community/Phi-4-mini-instruct",
+                fileName = "model.tflite",
+                isLocal = true
+            ),
+            ModelConfig(
+                id = "smollm-1.7b",
+                name = "SmolLM 1.7B",
+                description = "HuggingFace's SmolLM 1.7B - compact and efficient language model",
+                huggingFaceId = "litert-community/SmolLM-1.7B",
                 fileName = "model.tflite",
                 isLocal = true
             ),
@@ -140,10 +148,19 @@ class ModelManager @Inject constructor(
      * Get model size from Hugging Face API
      */
     private suspend fun getModelSize(huggingFaceId: String, fileName: String): String {
+        // Define cache key at function scope
+        val cacheKey = "$huggingFaceId/$fileName"
+        
         return try {
             // Check cache first
-            val cacheKey = "$huggingFaceId/$fileName"
             modelSizeCache[cacheKey]?.let { return it }
+            
+            // Skip for empty or specific IDs
+            if (huggingFaceId.isEmpty() || huggingFaceId == "text_classification.tflite") {
+                return "~50 MB"
+            }
+            
+            Log.d("ModelManager", "Fetching model size for $huggingFaceId/$fileName")
             
             // Fetch from API
             val filesResult = huggingFaceDownloadManager.getModelFiles(
@@ -153,27 +170,107 @@ class ModelManager @Inject constructor(
             
             if (filesResult.isSuccess) {
                 val files = filesResult.getOrNull() ?: emptyList()
-                val targetFile = files.find { it.path == fileName }
+                Log.d("ModelManager", "Found ${files.size} files for $huggingFaceId")
+                
+                // Try multiple common file names for LiteRT models
+                val possibleFileNames = listOf(
+                    fileName,
+                    "model.tflite",
+                    "tf_model.tflite",
+                    "pytorch_model.bin",
+                    "model.safetensors",
+                    "model.onnx"
+                )
+                
+                var targetFile: Any? = null
+                var foundFileName = ""
+                
+                for (possibleName in possibleFileNames) {
+                    val file = files.find { it.path == possibleName }
+                    if (file != null) {
+                        targetFile = file
+                        foundFileName = possibleName
+                        Log.d("ModelManager", "Found file: $foundFileName")
+                        break
+                    }
+                }
                 
                 val sizeString = when {
-                    targetFile?.size != null -> {
-                        formatFileSize(targetFile.size)
+                    targetFile != null -> {
+                        val size = try {
+                            val sizeField = targetFile::class.java.getDeclaredField("size")
+                            sizeField.isAccessible = true
+                            sizeField.get(targetFile) as? Long
+                        } catch (e: Exception) {
+                            try {
+                                val lfsField = targetFile::class.java.getDeclaredField("lfs")
+                                lfsField.isAccessible = true
+                                val lfs = lfsField.get(targetFile)
+                                if (lfs != null) {
+                                    val lfsSize = lfs::class.java.getDeclaredField("size")
+                                    lfsSize.isAccessible = true
+                                    lfsSize.get(lfs) as? Long
+                                } else null
+                            } catch (e2: Exception) {
+                                null
+                            }
+                        }
+                        
+                        if (size != null && size > 0) {
+                            formatFileSize(size)
+                        } else {
+                            // Provide estimated sizes for known LiteRT models
+                            when {
+                                huggingFaceId.contains("tinyllama", ignoreCase = true) -> "~2.2 GB"
+                                huggingFaceId.contains("gemma3-1b", ignoreCase = true) -> "~2.5 GB"
+                                huggingFaceId.contains("phi-4-mini", ignoreCase = true) -> "~7.4 GB"
+                                huggingFaceId.contains("smollm-1.7b", ignoreCase = true) -> "~3.4 GB"
+                                else -> "~1-5 GB"
+                            }
+                        }
                     }
-                    targetFile?.lfs?.size != null -> {
-                        formatFileSize(targetFile.lfs.size)
+                    else -> {
+                        Log.w("ModelManager", "No suitable file found for $huggingFaceId. Available files: ${files.map { it.path }}")
+                        // Provide estimated sizes for known LiteRT models
+                        when {
+                            huggingFaceId.contains("tinyllama", ignoreCase = true) -> "~2.2 GB"
+                            huggingFaceId.contains("gemma3-1b", ignoreCase = true) -> "~2.5 GB"
+                            huggingFaceId.contains("phi-4-mini", ignoreCase = true) -> "~7.4 GB"
+                            huggingFaceId.contains("smollm-1.7b", ignoreCase = true) -> "~3.4 GB"
+                            else -> "~1-5 GB"
+                        }
                     }
-                    else -> "Unknown"
                 }
                 
                 // Cache the result
                 modelSizeCache[cacheKey] = sizeString
+                Log.d("ModelManager", "Model size for $huggingFaceId: $sizeString")
                 sizeString
             } else {
-                "Unknown"
+                Log.w("ModelManager", "Failed to fetch files for $huggingFaceId: ${filesResult.exceptionOrNull()?.message}")
+                // Provide estimated sizes for known LiteRT models as fallback
+                val estimatedSize = when {
+                    huggingFaceId.contains("tinyllama", ignoreCase = true) -> "~2.2 GB"
+                    huggingFaceId.contains("gemma3-1b", ignoreCase = true) -> "~2.5 GB"
+                    huggingFaceId.contains("phi-4-mini", ignoreCase = true) -> "~7.4 GB"
+                    huggingFaceId.contains("smollm-1.7b", ignoreCase = true) -> "~3.4 GB"
+                    else -> "~1-5 GB"
+                }
+                modelSizeCache[cacheKey] = estimatedSize
+                estimatedSize
             }
         } catch (e: Exception) {
-            Log.e("ModelManager", "Failed to get model size for $huggingFaceId: ${e.message}")
-            "Unknown"
+            Log.e("ModelManager", "Failed to get model size for $huggingFaceId: ${e.message}", e)
+            // Provide estimated sizes for known LiteRT models as fallback
+            val estimatedSize = when {
+                huggingFaceId.contains("tinyllama", ignoreCase = true) -> "~2.2 GB"
+                huggingFaceId.contains("gemma3-1b", ignoreCase = true) -> "~2.5 GB"
+                huggingFaceId.contains("phi-4-mini", ignoreCase = true) -> "~7.4 GB"
+                huggingFaceId.contains("smollm-1.7b", ignoreCase = true) -> "~3.4 GB"
+                else -> "~1-5 GB"
+            }
+            modelSizeCache[cacheKey] = estimatedSize
+            estimatedSize
         }
     }
     
