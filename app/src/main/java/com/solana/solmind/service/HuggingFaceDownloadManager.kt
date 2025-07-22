@@ -56,7 +56,7 @@ class HuggingFaceDownloadManager @Inject constructor(
     suspend fun downloadModelWithProgress(
         modelId: String,
         downloadUrl: String,
-        fileName: String = "model.tflite",
+        fileName: String = "pytorch_model.bin",
         authToken: String? = null
     ): Flow<DownloadProgress> = flow {
         try {
@@ -121,7 +121,7 @@ class HuggingFaceDownloadManager @Inject constructor(
     suspend fun downloadModel(
         modelId: String,
         downloadUrl: String,
-        fileName: String = "model.tflite",
+        fileName: String = "pytorch_model.bin",
         authToken: String? = null
     ): DownloadResult = withContext(Dispatchers.IO) {
         try {
@@ -258,7 +258,7 @@ class HuggingFaceDownloadManager @Inject constructor(
     /**
      * Check if a model file exists locally
      */
-    fun isModelDownloaded(modelId: String, fileName: String = "model.tflite"): Boolean {
+    fun isModelDownloaded(modelId: String, fileName: String = "pytorch_model.bin"): Boolean {
         val modelFile = File(context.filesDir, "models/$modelId/$fileName")
         return modelFile.exists() && modelFile.length() > 0
     }
@@ -266,7 +266,7 @@ class HuggingFaceDownloadManager @Inject constructor(
     /**
      * Get the local path of a downloaded model
      */
-    fun getModelPath(modelId: String, fileName: String = "model.tflite"): String? {
+    fun getModelPath(modelId: String, fileName: String = "pytorch_model.bin"): String? {
         val modelFile = File(context.filesDir, "models/$modelId/$fileName")
         return if (modelFile.exists()) modelFile.absolutePath else null
     }

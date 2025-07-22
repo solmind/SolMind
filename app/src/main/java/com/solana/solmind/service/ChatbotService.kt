@@ -1,6 +1,9 @@
 package com.solana.solmind.service
 
+import com.solana.solmind.service.PyTorchInference
+
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -10,7 +13,7 @@ import javax.inject.Singleton
 class ChatbotService @Inject constructor(
     private val context: Context,
     private val modelManager: ModelManager,
-    private val tensorFlowInference: TensorFlowLiteInference
+    private val pyTorchInference: PyTorchInference
 ) {
     private val maxSequenceLength = 512
     private val vocabularySize = 32128 // FLAN-T5 vocabulary size
@@ -38,25 +41,41 @@ class ChatbotService @Inject constructor(
     suspend fun generateResponse(userMessage: String): String {
         return withContext(Dispatchers.IO) {
             try {
+                Log.d(TAG, "ChatbotService: Generating response for message: '$userMessage'")
                 val selectedModel = modelManager.selectedModel.value
                 
                 if (selectedModel == null) {
+                    Log.w(TAG, "ChatbotService: No model selected, using fallback response")
                     return@withContext generateFallbackResponse(userMessage)
                 }
                 
+                Log.i(TAG, "ChatbotService: Selected model: ${selectedModel.name} (${selectedModel.id})")
+                
                 // Load model if not already loaded
-                if (!tensorFlowInference.isModelLoaded() || tensorFlowInference.getCurrentModelId() != selectedModel.id) {
-                    val modelPath = context.filesDir.absolutePath + "/models/${selectedModel.id}"
-                    val loaded = tensorFlowInference.loadModel(modelPath, selectedModel.id)
-                    if (!loaded) {
+                if (!pyTorchInference.isModelLoaded() || pyTorchInference.getCurrentModelId() != selectedModel.id) {
+                    val modelPath = modelManager.getModelPath(selectedModel.id)
+                    if (modelPath == null) {
+                        Log.e(TAG, "ChatbotService: Model ${selectedModel.id} not downloaded or path not found, using fallback")
                         return@withContext generateFallbackResponse(userMessage)
                     }
+                    Log.i(TAG, "ChatbotService: Loading model from path: $modelPath")
+                    val loaded = pyTorchInference.loadModel(modelPath, selectedModel.id)
+                    if (!loaded) {
+                        Log.e(TAG, "ChatbotService: Failed to load model ${selectedModel.id}, using fallback")
+                        return@withContext generateFallbackResponse(userMessage)
+                    }
+                    Log.i(TAG, "ChatbotService: Successfully loaded model ${selectedModel.id}")
+                } else {
+                    Log.d(TAG, "ChatbotService: Model ${selectedModel.id} already loaded")
                 }
                 
-                // Generate response using the TensorFlow Lite inference service
-                generateModelResponse(userMessage)
+                // Generate response using the PyTorch inference service
+                val response = generateModelResponse(userMessage)
+                Log.i(TAG, "ChatbotService: Generated response: '$response'")
+                response
                 
             } catch (e: Exception) {
+                Log.e(TAG, "ChatbotService: Exception during response generation", e)
                 generateFallbackResponse(userMessage)
             }
         }
@@ -110,28 +129,29 @@ class ChatbotService @Inject constructor(
     
     private suspend fun generateModelResponse(userMessage: String): String {
         return try {
-            if (!tensorFlowInference.isModelLoaded()) {
+            if (!pyTorchInference.isModelLoaded()) {
+                Log.w(TAG, "ChatbotService: Model not loaded for inference")
                 return generateFallbackResponse(userMessage)
             }
             
-            // Tokenize input message
-            val inputTokens = tokenizeText(userMessage)
+            Log.d(TAG, "ChatbotService: Starting model inference")
             
-            // Use TensorFlowLiteInference for inference
-            val outputTokens = tensorFlowInference.runInference(inputTokens, 512, 512)
-            
-            if (outputTokens != null) {
-                // Decode output tokens to text
-                val response = detokenizeText(outputTokens)
-                
-                // Clean up the response
-                response.trim().takeIf { it.isNotEmpty() && it != userMessage }
-                    ?: generateFallbackResponse(userMessage)
-            } else {
-                generateFallbackResponse(userMessage)
-            }
+            // Use PyTorchInference for inference
+             val startTime = System.currentTimeMillis()
+             val response = pyTorchInference.runInference(userMessage)
+             val inferenceTime = System.currentTimeMillis() - startTime
+             
+             if (response != null) {
+                 Log.d(TAG, "ChatbotService: Inference completed in ${inferenceTime}ms")
+                 return response
+             } else {
+                 Log.w(TAG, "ChatbotService: Inference returned null, using fallback")
+                 return generateFallbackResponse(userMessage)
+             }
+
                 
         } catch (e: Exception) {
+            Log.e(TAG, "ChatbotService: Exception during model inference", e)
             generateFallbackResponse(userMessage)
         }
     }
@@ -146,6 +166,7 @@ class ChatbotService @Inject constructor(
     }
     
     private fun generateFallbackResponse(userMessage: String): String {
+        Log.d(TAG, "ChatbotService: Generating fallback response for: '$userMessage'")
         val normalizedMessage = userMessage.lowercase().trim()
         
         return when {
@@ -215,6 +236,11 @@ class ChatbotService @Inject constructor(
     }
     
     fun clearModel() {
-        tensorFlowInference.closeModel()
+        Log.i(TAG, "ChatbotService: Clearing model resources")
+        pyTorchInference.closeModel()
+    }
+    
+    companion object {
+        private const val TAG = "ChatbotService"
     }
 }

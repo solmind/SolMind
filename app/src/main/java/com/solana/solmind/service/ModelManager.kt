@@ -88,7 +88,7 @@ class ModelManager @Inject constructor(
         private const val SELECTED_MODEL_KEY = "selected_model_id"
         private const val MODEL_DOWNLOADED_PREFIX = "model_downloaded_"
         
-        // Base model configurations without hardcoded sizes
+        // Base model configurations for PyTorch models
         private val BASE_MODEL_CONFIGS = listOf(
             ModelConfig(
                 id = "flan-t5-small",
@@ -307,8 +307,12 @@ class ModelManager @Inject constructor(
     }
     
     fun isModelDownloaded(modelId: String): Boolean {
+        // Get the correct file name for this model
+        val config = BASE_MODEL_CONFIGS.find { it.id == modelId }
+        val fileName = config?.fileName ?: "pytorch_model.bin"
+        
         // Use HuggingFaceDownloadManager to check if model exists
-        val isFileDownloaded = huggingFaceDownloadManager.isModelDownloaded(modelId, "pytorch_model.bin")
+        val isFileDownloaded = huggingFaceDownloadManager.isModelDownloaded(modelId, fileName)
         val isMarkedDownloaded = prefs.getBoolean(MODEL_DOWNLOADED_PREFIX + modelId, false)
         return isFileDownloaded && isMarkedDownloaded
     }
@@ -327,11 +331,15 @@ class ModelManager @Inject constructor(
                 // Update status to downloading
                 updateModelStatus(modelId, ModelDownloadStatus.DOWNLOADING)
                 
+                // Get the correct file name for this model
+                val config = BASE_MODEL_CONFIGS.find { it.id == modelId }
+                val fileName = config?.fileName ?: "pytorch_model.bin"
+                
                 // Use HuggingFaceDownloadManager to download with progress tracking
                 huggingFaceDownloadManager.downloadModelWithProgress(
                     modelId = modelId,
                     downloadUrl = model.downloadUrl,
-                    fileName = "pytorch_model.bin",
+                    fileName = fileName,
                     authToken = huggingFaceConfig.getApiToken()
                 ).collect { progress ->
                     // Update download progress
@@ -404,7 +412,9 @@ class ModelManager @Inject constructor(
     
     fun getModelPath(modelId: String): String? {
         if (!isModelDownloaded(modelId)) return null
-        return huggingFaceDownloadManager.getModelPath(modelId, "pytorch_model.bin")
+        val config = BASE_MODEL_CONFIGS.find { it.id == modelId }
+        val fileName = config?.fileName ?: "pytorch_model.bin"
+        return huggingFaceDownloadManager.getModelPath(modelId, fileName)
     }
     
     fun getAvailableModelsList(): List<LanguageModel> = getAvailableModels()

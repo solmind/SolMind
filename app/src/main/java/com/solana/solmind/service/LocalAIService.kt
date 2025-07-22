@@ -33,7 +33,7 @@ class LocalAIService @Inject constructor(
             val modelPath = modelManager.getModelPath(selectedModel.id)
             
             // Simulate model inference using the selected model
-            // In production, this would load the actual TensorFlow Lite model from modelPath
+            // In production, this would load the actual PyTorch model from modelPath
             val modelResponse = simulateModelResponse(content, selectedModel)
             
             // Parse the response
