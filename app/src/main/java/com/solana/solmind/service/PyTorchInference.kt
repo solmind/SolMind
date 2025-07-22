@@ -19,15 +19,15 @@ class PyTorchInference @Inject constructor(
 ) {
     companion object {
         private const val TAG = "PyTorchInference"
-        
-        init {
-            try {
-                // Initialize SoLoader for ExecuTorch native libraries
-                com.facebook.soloader.SoLoader.init(context, false)
-                Log.d(TAG, "SoLoader initialized successfully")
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize SoLoader", e)
-            }
+    }
+    
+    init {
+        try {
+            // Initialize SoLoader for ExecuTorch native libraries
+            com.facebook.soloader.SoLoader.init(context, false)
+            Log.d(TAG, "SoLoader initialized successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize SoLoader", e)
         }
     }
     
@@ -85,7 +85,7 @@ class PyTorchInference @Inject constructor(
             // Note: This is a simplified implementation
             // In practice, you'd need proper tokenization and decoding
             val inputTensor = createInputTensor(inputText)
-            val outputTensor = currentModule.forward(EValue.from(inputTensor))
+            val outputTensor = currentModule.forward(EValue.from(inputTensor))[0]
             
             val result = decodeOutput(outputTensor)
             Log.d(TAG, "Inference completed, output: $result")

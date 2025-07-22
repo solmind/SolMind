@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.solana.solmind.data.model.AccountMode
@@ -32,13 +33,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val currentAccountMode by accountModeManager.currentAccountMode
-                .stateIn(
-                    scope = lifecycleScope,
-                    started = SharingStarted.WhileSubscribed(5000),
-                    initialValue = AccountMode.OFFCHAIN
-                )
-                .collectAsState()
+            val currentAccountMode by remember {
+                accountModeManager.currentAccountMode
+                    .stateIn(
+                        scope = lifecycleScope,
+                        started = SharingStarted.WhileSubscribed(5000),
+                        initialValue = AccountMode.OFFCHAIN
+                    )
+            }.collectAsState()
             
             SolMindTheme(
                 accountMode = currentAccountMode,
