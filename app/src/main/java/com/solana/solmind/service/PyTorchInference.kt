@@ -76,14 +76,19 @@ class PyTorchInference @Inject constructor(
         return try {
             Log.d(TAG, "Running inference with input: $inputText")
             
-            // For text generation models like FLAN-T5, we need to:
-            // 1. Tokenize the input text
-            // 2. Convert to tensor
-            // 3. Run forward pass
-            // 4. Decode output tokens
+            // TEMPORARY: Return null to force fallback response
+            // The current models are not properly converted for ExecuTorch
+            // This prevents the app from crashing while we implement proper model conversion
+            Log.w(TAG, "PyTorch inference temporarily disabled - models need ExecuTorch conversion")
+            return null
             
-            // Note: This is a simplified implementation
-            // In practice, you'd need proper tokenization and decoding
+            // TODO: Implement proper ExecuTorch model conversion and inference
+            // For text generation models like FLAN-T5, we need to:
+            // 1. Convert PyTorch models to ExecuTorch format (.pte files)
+            // 2. Implement proper tokenization and decoding
+            // 3. Use correct tensor formats and shapes
+            
+            /*
             val inputTensor = createInputTensor(inputText)
             val outputTensor = currentModule.forward(EValue.from(inputTensor))[0]
             
@@ -91,6 +96,7 @@ class PyTorchInference @Inject constructor(
             Log.d(TAG, "Inference completed, output: $result")
             
             result
+            */
         } catch (e: Exception) {
             Log.e(TAG, "Inference failed", e)
             null
