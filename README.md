@@ -50,7 +50,7 @@ An AI-powered expense tracking Android app built for the Solana Mobile Hackathon
 - **Dependency Injection**: Hilt
 - **Database**: Room (SQLite)
 - **Preferences**: DataStore for theme and user preferences
-- **AI/ML**: ML Kit for text recognition, TensorFlow Lite for local AI models
+- **AI/ML**: ML Kit for text recognition, PyTorch/ExecuTorch for local AI models
 - **Blockchain**: Solana Web3.js integration
 - **Camera**: CameraX
 - **Navigation**: Jetpack Navigation Compose
@@ -76,7 +76,7 @@ app/src/main/java/com/solana/ailedger/
 
 ### AI Service (`AIService.kt` & `LocalAIService.kt`)
 - Text extraction from images using ML Kit
-- Local AI model inference using TensorFlow Lite
+- Local AI model inference using PyTorch/ExecuTorch
 - Transaction categorization using selected language models
 - Amount and date extraction from text
 - Confidence scoring for AI predictions

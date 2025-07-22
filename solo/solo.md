@@ -199,6 +199,112 @@ This session involved implementing a comprehensive theme switching system for th
 - Preferences persist across app restarts
 - Type-safe preference keys and values
 
+---
+
+# PyTorch Migration Session - TensorFlow Lite to PyTorch/ExecuTorch
+
+## Overview
+This session involved migrating the SolMind application from TensorFlow Lite to PyTorch/ExecuTorch to resolve a critical architecture mismatch where PyTorch models were being downloaded but TensorFlow Lite was used for inference.
+
+## Problem Identified
+The application had a fundamental architecture issue:
+- **Downloaded Models**: PyTorch models (`pytorch_model.bin`) from Hugging Face
+- **Inference Engine**: TensorFlow Lite expecting `.tflite` files
+- **Result**: Models couldn't be loaded, causing inference failures
+
+## Migration Process
+
+### 1. Dependencies Update
+**File**: `app/build.gradle`
+- **Removed**: TensorFlow Lite dependencies
+  - `org.tensorflow:tensorflow-lite`
+  - `org.tensorflow:tensorflow-lite-support`
+  - `org.tensorflow:tensorflow-lite-task-text`
+- **Added**: PyTorch/ExecuTorch dependencies
+  - `executorch-android`
+  - `soloader`
+  - `fbjni`
+
+### 2. New PyTorch Inference Engine
+**New File**: `PyTorchInference.kt`
+- Implemented PyTorch inference service using ExecuTorch
+- Methods for loading PyTorch models
+- Text-to-text generation capabilities
+- Model resource management
+- Error handling and logging
+
+### 3. Service Layer Updates
+**Updated Files**:
+- **`ChatbotService.kt`**: Replaced TensorFlowLiteInference with PyTorchInference
+- **`ModelManager.kt`**: Updated model configurations to use PyTorch models
+- **`HuggingFaceDownloadManager.kt`**: Changed default filename to `pytorch_model.bin`
+- **`LocalAIService.kt`**: Updated comments to reference PyTorch
+
+### 4. Model Configuration Changes
+**Model Repository Updates**:
+- **FLAN-T5 Small**: `philschmid/flan-t5-small-tflite` → `google/flan-t5-small`
+- **FLAN-T5 Base**: `philschmid/flan-t5-base-tflite` → `google/flan-t5-base`
+- **DistilBERT**: `tensorflow/distilbert-base-uncased` → `distilbert-base-uncased`
+- **File Format**: `model.tflite` → `pytorch_model.bin`
+
+### 5. Code Cleanup
+**Removed Files**:
+- `TensorFlowLiteInference.kt` (no longer needed)
+
+**Updated References**:
+- All TensorFlow Lite comments updated to PyTorch
+- Removed old tokenization and detokenization code
+- Cleaned up inference pipeline
+
+## Technical Details
+
+### PyTorchInference Implementation
+```kotlin
+class PyTorchInference @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+    fun loadModel(modelPath: String): Boolean
+    fun runInference(inputText: String): String?
+    fun isModelLoaded(): Boolean
+    fun getCurrentModelId(): String?
+    fun closeModel()
+}
+```
+
+### Model File Structure
+- **Storage Path**: `/data/data/com.solana.solmind/files/models/{modelId}/`
+- **File Name**: `pytorch_model.bin`
+- **Format**: PyTorch binary format
+
+### Architecture Benefits
+1. **Consistency**: PyTorch models with PyTorch inference
+2. **Performance**: ExecuTorch optimized for mobile
+3. **Compatibility**: Direct support for Hugging Face PyTorch models
+4. **Maintainability**: Single ML framework throughout the stack
+
+## Verification
+- ✅ Project builds successfully
+- ✅ All TensorFlow Lite references removed
+- ✅ PyTorch dependencies properly integrated
+- ✅ Model configurations updated consistently
+- ✅ Service layer properly migrated
+
+## Files Modified
+1. `app/build.gradle` - Dependencies migration
+2. `PyTorchInference.kt` - New inference engine
+3. `ChatbotService.kt` - Service integration
+4. `ModelManager.kt` - Model configurations
+5. `HuggingFaceDownloadManager.kt` - File handling
+6. `LocalAIService.kt` - Comment updates
+7. `README.md` - Documentation updates
+
+## Result
+✅ **MIGRATION COMPLETE**
+- Successfully migrated from TensorFlow Lite to PyTorch/ExecuTorch
+- Resolved architecture mismatch between model format and inference engine
+- Maintained all existing functionality while improving compatibility
+- Ready for PyTorch model deployment and inference
+
 ## Build Process
 
 ### Compilation Issues Resolved
