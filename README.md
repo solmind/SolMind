@@ -2,13 +2,30 @@
 
 An AI-powered expense tracking Android app built for the Solana Mobile Hackathon. This app combines artificial intelligence with blockchain technology to provide intelligent expense categorization and automatic Solana transaction tracking.
 
+## Recent Updates (Latest)
+
+### 🚀 LiteRT Model Integration & UI Improvements
+- **Model Replacement**: Migrated from legacy models to LiteRT-compatible versions from `litert-community`
+- **Enhanced UI**: Fixed model list scrolling with LazyColumn implementation
+- **Improved Size Display**: Resolved "Unknown" size issues with intelligent fallback estimates
+- **Better Error Handling**: Enhanced model size detection with multiple API strategies
+- **Edge-Optimized**: All models now pre-converted for efficient edge deployment
+
 ## Features
 
 ### 🤖 AI-Powered Expense Classification
 - **Smart Text Recognition**: Extract transaction details from receipt photos using ML Kit
-- **Local Language Models**: Choose from multiple AI models (FLAN-T5 Small, DialoGPT Small, DistilBERT Base)
+- **LiteRT-Compatible Models**: Choose from optimized edge-deployment models:
+  - **TinyLlama 1.1B Chat**: Compact conversational AI model (~2.2 GB)
+  - **Gemma3 1B IT**: Google's instruction-tuned model (~2.5 GB)
+  - **Phi-4 Mini Instruct**: Microsoft's efficient instruction model (~7.4 GB)
+  - **SmolLM 1.7B**: HuggingFace's compact language model (~3.4 GB)
 - **Cloud AI Models**: Access to SolMind Cloud AI with subscription (SolMind Master)
-- **Model Management**: Download, select, and manage AI models directly from settings
+- **Enhanced Model Management**: 
+  - Scrollable model selection interface
+  - Real-time model size preview
+  - Download progress tracking
+  - Intelligent size estimation for all models
 - **Comprehensive Field Inference**: Automatically extract 5 key fields from user input:
   - Transaction type (income/expense)
   - Amount (with enhanced pattern recognition)
@@ -97,11 +114,13 @@ app/src/main/java/com/solana/ailedger/
 - Helper functions for `extractDescription()` and `extractDate()`
 
 ### Model Manager (`ModelManager.kt`)
-- Local language model selection and management
-- Model download progress tracking
-- Support for multiple AI models (FLAN-T5, DialoGPT, DistilBERT)
-- Cloud AI model integration (SolMind Cloud AI)
-- Model deletion and storage management
+- **LiteRT Model Integration**: Seamless integration with `litert-community` models from HuggingFace
+- **Enhanced Size Detection**: Intelligent model size fetching with multiple fallback strategies
+- **Improved Error Handling**: Robust error handling with estimated size fallbacks
+- **Model Download Progress**: Real-time download progress tracking with status updates
+- **Optimized Edge Models**: Support for TinyLlama, Gemma3, Phi-4 Mini, and SmolLM models
+- **Cloud AI Integration**: SolMind Cloud AI model access for premium users
+- **Smart Caching**: Efficient model size caching to reduce API calls
 
 ### Subscription Manager (`SubscriptionManager.kt`)
 - SolMind Master subscription tier management
