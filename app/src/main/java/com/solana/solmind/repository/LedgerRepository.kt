@@ -81,10 +81,16 @@ class LedgerRepository @Inject constructor(
         
         return LedgerEntry(
             amount = finalAmount,
-            description = text,
+            description = parseResult.description.takeIf { it.isNotBlank() } ?: text,
             category = parseResult.category,
             type = parseResult.type,
-            date = Date(),
+            date = parseResult.date?.let { dateStr ->
+                try {
+                    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).parse(dateStr)
+                } catch (e: Exception) {
+                    Date()
+                }
+            } ?: Date(),
             accountMode = accountMode,
             confidence = parseResult.confidence,
             isAutoDetected = true

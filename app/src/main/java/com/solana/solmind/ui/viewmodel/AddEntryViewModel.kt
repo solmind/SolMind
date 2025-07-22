@@ -261,6 +261,7 @@ class AddEntryViewModel @Inject constructor(
                         description = suggestion.description,
                         transactionType = suggestion.type,
                         category = suggestion.category,
+                        date = suggestion.date,
                         confidence = suggestion.confidence
                     )
                     

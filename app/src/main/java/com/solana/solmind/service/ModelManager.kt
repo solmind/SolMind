@@ -35,7 +35,8 @@ data class ModelConfig(
     val huggingFaceId: String,
     val fileName: String,
     val isLocal: Boolean = true,
-    val requiresSubscription: Boolean = false
+    val requiresSubscription: Boolean = false,
+    val preConvertedRepo: String? = null // Optional pre-converted TFLite model repository
 )
 
 enum class ModelDownloadStatus {
@@ -88,14 +89,23 @@ class ModelManager @Inject constructor(
         private const val SELECTED_MODEL_KEY = "selected_model_id"
         private const val MODEL_DOWNLOADED_PREFIX = "model_downloaded_"
         
-        // Base model configurations for PyTorch models
+        // Base model configurations for TensorFlow Lite models
         private val BASE_MODEL_CONFIGS = listOf(
+            ModelConfig(
+                id = "smolvlm-256m-instruct",
+                name = "SmolVLM 256M Instruct",
+                description = "Compact vision-language model for multimodal understanding",
+                huggingFaceId = "HuggingFaceTB/SmolVLM-256M-Instruct",
+                preConvertedRepo = "litert-community/SmolVLM-256M-Instruct",
+                fileName = "smalvlm-256m-instruct_q8_ekv2048.tflite",
+                isLocal = true
+            ),
             ModelConfig(
                 id = "flan-t5-small",
                 name = "FLAN-T5 Small",
                 description = "Compact model for basic transaction parsing",
                 huggingFaceId = "google/flan-t5-small",
-                fileName = "pytorch_model.bin",
+                fileName = "model.tflite",
                 isLocal = true
             ),
             ModelConfig(
@@ -103,7 +113,7 @@ class ModelManager @Inject constructor(
                 name = "FLAN-T5 Base",
                 description = "Balanced model for general transaction analysis",
                 huggingFaceId = "google/flan-t5-base",
-                fileName = "pytorch_model.bin",
+                fileName = "model.tflite",
                 isLocal = true
             ),
             ModelConfig(
@@ -111,7 +121,7 @@ class ModelManager @Inject constructor(
                 name = "DistilBERT Base",
                 description = "Fast and efficient model for transaction understanding",
                 huggingFaceId = "distilbert-base-uncased",
-                fileName = "pytorch_model.bin",
+                fileName = "model.tflite",
                 isLocal = true
             ),
             ModelConfig(
@@ -280,7 +290,7 @@ class ModelManager @Inject constructor(
     }
     
     private fun getDefaultModel(): LanguageModel? {
-        val savedModelId = prefs.getString(SELECTED_MODEL_KEY, "flan-t5-small")
+        val savedModelId = prefs.getString(SELECTED_MODEL_KEY, "smolvlm-256m-instruct")
         val availableModels = getAvailableModels()
         return if (availableModels.isNotEmpty()) {
             availableModels.find { it.id == savedModelId } ?: availableModels.first()
@@ -309,7 +319,7 @@ class ModelManager @Inject constructor(
     fun isModelDownloaded(modelId: String): Boolean {
         // Get the correct file name for this model
         val config = BASE_MODEL_CONFIGS.find { it.id == modelId }
-        val fileName = config?.fileName ?: "pytorch_model.bin"
+        val fileName = config?.fileName ?: "model.tflite"
         
         // Use HuggingFaceDownloadManager to check if model exists
         val isFileDownloaded = huggingFaceDownloadManager.isModelDownloaded(modelId, fileName)
@@ -324,26 +334,57 @@ class ModelManager @Inject constructor(
                 val model = getAvailableModels().find { it.id == modelId }
                     ?: return@withContext Result.failure(Exception("Model not found: $modelId"))
                 
-                if (model.downloadUrl.isEmpty()) {
-                    return@withContext Result.failure(Exception("No download URL available for model: $modelId"))
-                }
+                val config = BASE_MODEL_CONFIGS.find { it.id == modelId }
+                    ?: return@withContext Result.failure(Exception("Model config not found: $modelId"))
                 
                 // Update status to downloading
                 updateModelStatus(modelId, ModelDownloadStatus.DOWNLOADING)
                 
-                // Get the correct file name for this model
-                val config = BASE_MODEL_CONFIGS.find { it.id == modelId }
-                val fileName = config?.fileName ?: "pytorch_model.bin"
+                val fileName = config.fileName
+                var downloadUrl: String
+                var downloadSuccess = false
                 
-                // Use HuggingFaceDownloadManager to download with progress tracking
-                huggingFaceDownloadManager.downloadModelWithProgress(
-                    modelId = modelId,
-                    downloadUrl = model.downloadUrl,
-                    fileName = fileName,
-                    authToken = huggingFaceConfig.getApiToken()
-                ).collect { progress ->
-                    // Update download progress
-                    updateDownloadProgress(modelId, progress.percentage / 100f)
+                // First, try to download from pre-converted repository if available
+                if (!config.preConvertedRepo.isNullOrEmpty()) {
+                    try {
+                        downloadUrl = "https://huggingface.co/${config.preConvertedRepo}/resolve/main/$fileName"
+                        Log.d("ModelManager", "Attempting to download pre-converted model from: $downloadUrl")
+                        
+                        huggingFaceDownloadManager.downloadModelWithProgress(
+                            modelId = modelId,
+                            downloadUrl = downloadUrl,
+                            fileName = fileName,
+                            authToken = huggingFaceConfig.getApiToken()
+                        ).collect { progress ->
+                            updateDownloadProgress(modelId, progress.percentage / 100f)
+                        }
+                        
+                        downloadSuccess = true
+                        Log.d("ModelManager", "Successfully downloaded pre-converted model for $modelId")
+                    } catch (e: Exception) {
+                        Log.w("ModelManager", "Pre-converted model not available for $modelId, will try conversion: ${e.message}")
+                        downloadSuccess = false
+                    }
+                }
+                
+                // If pre-converted download failed, fallback to original model (requires conversion)
+                if (!downloadSuccess) {
+                    if (model.downloadUrl.isEmpty()) {
+                        return@withContext Result.failure(Exception("No download URL available for model: $modelId"))
+                    }
+                    
+                    Log.d("ModelManager", "Downloading original model for conversion: ${model.downloadUrl}")
+                    
+                    huggingFaceDownloadManager.downloadModelWithProgress(
+                        modelId = modelId,
+                        downloadUrl = model.downloadUrl,
+                        fileName = fileName,
+                        authToken = huggingFaceConfig.getApiToken()
+                    ).collect { progress ->
+                        updateDownloadProgress(modelId, progress.percentage / 100f)
+                    }
+                    
+                    Log.d("ModelManager", "Downloaded original model for $modelId - conversion may be required")
                 }
                 
                 // Mark as downloaded in preferences
@@ -413,7 +454,7 @@ class ModelManager @Inject constructor(
     fun getModelPath(modelId: String): String? {
         if (!isModelDownloaded(modelId)) return null
         val config = BASE_MODEL_CONFIGS.find { it.id == modelId }
-        val fileName = config?.fileName ?: "pytorch_model.bin"
+        val fileName = config?.fileName ?: "model.tflite"
         return huggingFaceDownloadManager.getModelPath(modelId, fileName)
     }
     
