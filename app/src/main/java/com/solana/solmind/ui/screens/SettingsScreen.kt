@@ -767,7 +767,16 @@ fun ModelItem(
     onUpgradeClicked: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                if (!modelState.model.isLocal) {
+                    // Cloud model - redirect to upgrade page
+                    onUpgradeClicked()
+                } else if (modelState.status == ModelDownloadStatus.DOWNLOADED) {
+                    onModelSelected(modelState.model)
+                }
+            },
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) 
                 MaterialTheme.colorScheme.primaryContainer 

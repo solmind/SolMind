@@ -4,6 +4,14 @@ An AI-powered expense tracking Android app built for the Solana Mobile Hackathon
 
 ## Recent Updates (Latest)
 
+### 🔮 Cloud AI Model "COMING" Feature
+- **Premium Model Preview**: Cloud AI models now marked as "COMING" with visual badges
+- **Upgrade Flow Integration**: Clicking cloud models redirects users to SolMind Master upgrade page
+- **Visual Distinction**: Cloud models display with "COMING" badge and CloudQueue icon
+- **Unselectable State**: Cloud models are disabled until subscription upgrade
+- **Clear User Guidance**: Intuitive UI guides users toward premium subscription benefits
+- **Subscription Awareness**: Seamless integration with existing upgrade dialog system
+
 ### 💰 Currency Preference System & Account Mode Integration
 - **Smart Currency Display**: Comprehensive currency preference system with USD and SOL support
 - **Account Mode Awareness**: Offchain mode always uses USD, onchain mode allows user preference
