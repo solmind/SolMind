@@ -4,6 +4,16 @@ An AI-powered expense tracking Android app built for the Solana Mobile Hackathon
 
 ## Recent Updates (Latest)
 
+### 🎨 Compact UI Design & Space Optimization
+- **Compact Layout System**: Applied consistent compact styling across all menu pages
+- **Reduced Padding & Spacing**: Optimized spacing from 16-20dp to 8-12dp throughout the interface
+- **Enhanced Content Density**: More information fits on screen without feeling cramped
+- **Quick Stats Overview**: Added new statistics section to HomeScreen with key metrics
+- **Improved Navigation**: Less scrolling required with better space utilization
+- **Maintained Aesthetics**: Preserved pixel design language while improving efficiency
+- **Universal Application**: Compact styling applied to HomeScreen, SettingsScreen, WalletScreen, and AddEntryScreen
+- **Better UX**: Faster navigation and improved information accessibility
+
 ### 🔮 Cloud AI Model "COMING" Feature
 - **Premium Model Preview**: Cloud AI models now marked as "COMING" with visual badges
 - **Upgrade Flow Integration**: Clicking cloud models redirects users to SolMind Master upgrade page
