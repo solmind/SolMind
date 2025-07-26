@@ -90,7 +90,7 @@ fun SettingsScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(12.dp)
                         .clickable { showUpgradeDialog = true },
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -100,7 +100,7 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -109,7 +109,7 @@ fun SettingsScreen(
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(32.dp)
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Upgrade to SolMind Master",
@@ -134,7 +134,7 @@ fun SettingsScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.tertiaryContainer
                     )
@@ -142,7 +142,7 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -334,13 +334,13 @@ fun SettingsScreen(
                 )
             }
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
             // Footer
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -355,7 +355,7 @@ fun SettingsScreen(
                 )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
     
@@ -1025,13 +1025,13 @@ fun SettingsSection(
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
         )
         
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 12.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column {
@@ -1039,7 +1039,7 @@ fun SettingsSection(
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 
@@ -1061,17 +1061,17 @@ fun SettingsItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(20.dp)
         )
         
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(12.dp))
         
         Column(
             modifier = Modifier.weight(1f)

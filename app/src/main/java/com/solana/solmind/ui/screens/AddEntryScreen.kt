@@ -100,7 +100,7 @@ fun AddEntryScreen(
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text("SolMind Assistant")
                     }
                 },
@@ -184,7 +184,7 @@ fun ChatInterface(
     val keyboardController = LocalSoftwareKeyboardController.current
     
     Column(
-        modifier = modifier.padding(16.dp)
+        modifier = modifier.padding(12.dp)
     ) {
         // Welcome message if no chat messages
         if (chatMessages.isEmpty()) {
@@ -198,7 +198,7 @@ fun ChatInterface(
         // Chat messages
         LazyColumn(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
             reverseLayout = false
         ) {
             items(chatMessages) { message ->
@@ -212,13 +212,13 @@ fun ChatInterface(
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         
         // Input area
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             OutlinedTextField(
                 value = messageText,
@@ -242,7 +242,7 @@ fun ChatInterface(
             IconButton(
                 onClick = onSelectImage,
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(40.dp)
                     .background(
                         MaterialTheme.colorScheme.primaryContainer,
                         CircleShape
@@ -266,7 +266,7 @@ fun ChatInterface(
                 },
                 enabled = messageText.isNotBlank() && !isLoading,
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(40.dp)
                     .background(
                         if (messageText.isNotBlank()) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.surfaceVariant,
@@ -296,22 +296,22 @@ fun WelcomeMessage(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(vertical = 12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
                 Icons.Default.Settings,
                 contentDescription = null,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(40.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = "Hi! I'm your SolMind Assistant",
                 style = MaterialTheme.typography.headlineSmall,
@@ -327,14 +327,14 @@ fun WelcomeMessage(
             )
             
             if (onTestFlanT5 != null) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "✨ Powered by ${selectedModel?.name ?: "FLAN-T5-small"} AI Model",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
                     text = "Select Agent Mode:",
@@ -346,7 +346,7 @@ fun WelcomeMessage(
                 
                 // Agent Mode Selection
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     // Transaction Parser Agent
@@ -369,7 +369,7 @@ fun WelcomeMessage(
                             BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Column(
-                            modifier = Modifier.padding(12.dp),
+                             modifier = Modifier.padding(10.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(
@@ -384,7 +384,7 @@ fun WelcomeMessage(
                                     else 
                                         MaterialTheme.colorScheme.primary
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
                                 if (selectedAgent == "transaction_parser") {
                                     Icon(
                                         Icons.Default.Check,
@@ -394,7 +394,7 @@ fun WelcomeMessage(
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(3.dp))
                             Text(
                                 text = "Transaction Parser",
                                 style = MaterialTheme.typography.labelSmall,
@@ -430,7 +430,7 @@ fun WelcomeMessage(
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                     ) {
                         Column(
-                            modifier = Modifier.padding(12.dp),
+                             modifier = Modifier.padding(10.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(
@@ -498,7 +498,7 @@ fun ChatMessageItem(message: ChatMessage) {
                     .padding(6.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
         }
         
         Card(
@@ -518,7 +518,7 @@ fun ChatMessageItem(message: ChatMessage) {
         ) {
             Text(
                 text = message.content,
-                modifier = Modifier.padding(12.dp),
+                modifier = Modifier.padding(10.dp),
                 color = if (message.isUser) 
                     MaterialTheme.colorScheme.onPrimary 
                 else 
@@ -528,7 +528,7 @@ fun ChatMessageItem(message: ChatMessage) {
         }
         
         if (message.isUser) {
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
             Box(
                 modifier = Modifier
                     .size(32.dp)
@@ -579,7 +579,7 @@ fun TypingIndicator() {
             )
         ) {
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 repeat(3) { index ->
@@ -591,7 +591,7 @@ fun TypingIndicator() {
                                 CircleShape
                             )
                     )
-                    if (index < 2) Spacer(modifier = Modifier.width(4.dp))
+                    if (index < 2) Spacer(modifier = Modifier.width(3.dp))
                 }
             }
         }
@@ -609,8 +609,8 @@ fun TransactionPreviewScreen(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = modifier.padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Header
         Card(
@@ -620,13 +620,13 @@ fun TransactionPreviewScreen(
             )
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
+                modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
                     Icons.Default.Check,
                     contentDescription = null,
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(40.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -766,7 +766,7 @@ fun TransactionPreviewScreen(
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         LinearProgressIndicator(
                             progress = uiState.confidence,
                             modifier = Modifier.fillMaxWidth()
@@ -866,7 +866,7 @@ fun TransactionEditScreen(
                             modifier = Modifier.size(48.dp),
                             tint = MaterialTheme.colorScheme.secondary
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Edit Transaction",
                             style = MaterialTheme.typography.headlineSmall,
@@ -1023,7 +1023,7 @@ fun TransactionEditScreen(
                                                     text = "✨",
                                                     style = MaterialTheme.typography.titleMedium
                                                 )
-                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Spacer(modifier = Modifier.width(3.dp))
                                                 Text(
                                                     text = category.getEmoji(),
                                                     style = MaterialTheme.typography.titleMedium

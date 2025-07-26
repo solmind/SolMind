@@ -78,13 +78,13 @@ fun WalletScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
@@ -93,13 +93,13 @@ fun WalletScreen(
                             modifier = Modifier.size(48.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Wallet Management Unavailable",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Switch to Onchain mode to manage your Solana wallets and sync blockchain transactions.",
                             style = MaterialTheme.typography.bodyMedium,
@@ -113,14 +113,14 @@ fun WalletScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(12.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer
                         )
                     ) {
                         Text(
                             text = errorMessage,
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(12.dp),
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
@@ -132,8 +132,8 @@ fun WalletScreen(
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        contentPadding = PaddingValues(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(wallets) { wallet ->
                             WalletCard(
@@ -155,7 +155,7 @@ fun EmptyWalletsState() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -165,13 +165,13 @@ fun EmptyWalletsState() {
             modifier = Modifier.size(64.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = "No Wallets Added",
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = "Go to Settings to add a Solana wallet address and start tracking your on-chain activities",
             style = MaterialTheme.typography.bodyMedium,
@@ -193,7 +193,7 @@ fun WalletCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(12.dp)
         ) {
             // Header
             Row(
@@ -257,7 +257,7 @@ fun WalletCard(
                                 shape = CircleShape
                             )
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = if (wallet.isActive) "Active" else "Inactive",
                         style = MaterialTheme.typography.bodySmall,

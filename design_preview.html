@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolMind - Compact Home Page Design</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: #f0f0f0;
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .comparison-container {
+            display: flex;
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .comparison-section {
+            flex: 1;
+            min-width: 600px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: linear-gradient(135deg, #9945FF, #00D4AA);
+            color: white;
+            letter-spacing: 2px;
+        }
+        
+        .header-demo {
+            background: #0F0F23;
+            border: 2px solid #9945FF;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .app-title {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .app-subtitle {
+            color: #888;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+        
+        .old-switcher {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #9945FF, #00D4AA);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .compact-switcher {
+            display: flex;
+            background: rgba(153, 69, 255, 0.1);
+            border: 1px solid rgba(153, 69, 255, 0.3);
+            border-radius: 20px;
+            padding: 4px;
+            cursor: pointer;
+        }
+        
+        .switch-option {
+            padding: 8px 12px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        
+        .switch-option.active {
+            background: #9945FF;
+            color: white;
+        }
+        
+        .switch-option.inactive {
+            color: rgba(153, 69, 255, 0.7);
+        }
+        
+        .switch-icon {
+            width: 16px;
+            height: 16px;
+            background: currentColor;
+            border-radius: 2px;
+        }
+        
+        .dark-theme {
+            background: linear-gradient(180deg, #0A0A0A 0%, #1A1A2E 50%, #16213E 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 0;
+        }
+        
+        .light-theme {
+            background: linear-gradient(180deg, #F5F5F5 0%, #E8E8F0 50%, #DCDCE8 100%);
+            color: black;
+            padding: 20px;
+            border-radius: 0;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .pixel-card {
+            background: #0F0F23;
+            border: 3px solid #9945FF;
+            padding: 24px;
+            box-shadow: none;
+        }
+        
+        .light-theme .pixel-card {
+            background: #FAFAFA;
+            color: #333;
+        }
+        
+        .wallet-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .wallet-icon {
+            width: 32px;
+            height: 32px;
+            color: #9945FF;
+        }
+        
+        .wallet-title {
+            font-weight: bold;
+            letter-spacing: 2px;
+            font-size: 18px;
+        }
+        
+        .balance-box {
+            border: 2px solid #00D4AA;
+            background: #1A1A2E;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .light-theme .balance-box {
+            background: #F0F0F0;
+        }
+        
+        .balance-amount {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00D4AA;
+        }
+        
+        .stats-row {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .stat-card {
+            flex: 1;
+            border: 2px solid;
+            padding: 16px;
+        }
+        
+        .income-card {
+            border-color: #00D4AA;
+            background: #0A2A0A;
+        }
+        
+        .light-theme .income-card {
+            background: #E8F5E8;
+        }
+        
+        .expense-card {
+            border-color: #FF6B6B;
+            background: #2A0A0A;
+        }
+        
+        .light-theme .expense-card {
+            background: #FDE8E8;
+        }
+        
+        .stat-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-icon {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .stat-label {
+            font-weight: bold;
+            letter-spacing: 1px;
+            font-size: 12px;
+        }
+        
+        .stat-amount {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .income-text {
+            color: #00D4AA;
+        }
+        
+        .expense-text {
+            color: #FF6B6B;
+        }
+        
+        .section-header {
+            background: #0F0F23;
+            border: 2px solid #9945FF;
+            padding: 16px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            font-size: 18px;
+        }
+        
+        .light-theme .section-header {
+            background: #FAFAFA;
+            color: #333;
+        }
+        
+        .transaction-item {
+            background: #0F0F23;
+            border: 2px solid #00D4AA;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .light-theme .transaction-item {
+            background: #FAFAFA;
+            color: #333;
+        }
+        
+        .transaction-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+        
+        .category-icon {
+            width: 48px;
+            height: 48px;
+            border: 2px solid #FFB800;
+            background: rgba(255, 184, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .transaction-details h4 {
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        
+        .transaction-details p {
+            color: #888;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        
+        .light-theme .transaction-details p {
+            color: #555;
+        }
+        
+        .amount-box {
+            border: 1px solid #00D4AA;
+            background: #0A2A0A;
+            padding: 8px 12px;
+            font-weight: bold;
+            color: #00D4AA;
+        }
+        
+        .light-theme .amount-box {
+            background: #E8F5E8;
+        }
+        
+        .no-transactions {
+            background: #0F0F23;
+            border: 2px solid #888;
+            padding: 32px;
+            text-align: center;
+        }
+        
+        .no-transactions h3 {
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+        
+        .no-transactions p {
+            letter-spacing: 1px;
+            color: #888;
+        }
+    </style>
+</head>
+ <body>
+     <div class="comparison-container">
+         <!-- Before: Old Large Switcher -->
+         <div class="comparison-section">
+             <div class="section-title">BEFORE: Spacious Layout</div>
+             
+             <div class="header-demo">
+                 <div class="app-header">
+                     <div>
+                         <div class="app-title">SolMind</div>
+                         <div class="app-subtitle">Onchain Mode</div>
+                     </div>
+                     <div class="old-switcher">⚡</div>
+                 </div>
+                 
+                 <div style="color: #888; font-size: 14px; text-align: center; padding: 20px; border: 1px dashed #444;">
+                     <strong>Issues with old design:</strong><br>
+                     • Takes up 56dp × 56dp of valuable space<br>
+                     • Dominates the header area<br>
+                     • Poor space utilization<br>
+                     • Overwhelming visual presence
+                 </div>
+             </div>
+             
+             <!-- Sample wallet card to show context -->
+             <div class="pixel-card">
+                 <div class="wallet-header">
+                     <svg class="wallet-icon" fill="currentColor" viewBox="0 0 24 24">
+                         <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                     </svg>
+                     <h2 class="wallet-title">WALLET BALANCE</h2>
+                 </div>
+                 
+                 <div class="balance-box">
+                     <div class="balance-amount">◎ 12.45 SOL</div>
+                 </div>
+                 
+                 <div class="stats-row">
+                     <div class="stat-card income-card">
+                         <div class="stat-header">
+                             <svg class="stat-icon income-text" fill="currentColor" viewBox="0 0 24 24">
+                                 <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+                             </svg>
+                             <span class="stat-label income-text">INCOME</span>
+                         </div>
+                         <div class="stat-amount income-text">◎ 15.20 SOL</div>
+                     </div>
+                     
+                     <div class="stat-card expense-card">
+                         <div class="stat-header">
+                             <svg class="stat-icon expense-text" fill="currentColor" viewBox="0 0 24 24">
+                                 <path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/>
+                             </svg>
+                             <span class="stat-label expense-text">EXPENSES</span>
+                         </div>
+                         <div class="stat-amount expense-text">◎ 2.75 SOL</div>
+                     </div>
+                 </div>
+             </div>
+         </div>
+         
+         <!-- After: New Compact Switcher -->
+         <div class="comparison-section">
+             <div class="section-title">AFTER: Compact Layout with Quick Stats</div>
+             
+             <div class="header-demo">
+                 <div class="app-header">
+                     <div>
+                         <div class="app-title">SolMind</div>
+                         <div class="app-subtitle">Onchain Mode</div>
+                     </div>
+                     <div class="compact-switcher">
+                         <div class="switch-option active">
+                             <div class="switch-icon"></div>
+                             <span>ON</span>
+                         </div>
+                         <div class="switch-option inactive">
+                             <div class="switch-icon"></div>
+                             <span>OFF</span>
+                         </div>
+                     </div>
+                 </div>
+                 
+                 <!-- Quick Stats Section -->
+                  <div style="display: flex; gap: 8px; margin: 16px 0;">
+                      <div style="flex: 1; border: 1px solid #9B59B6; background: #1A1A2E; padding: 10px; text-align: center;">
+                          <div style="color: #9B59B6; font-family: 'JetBrains Mono', monospace; font-weight: bold; font-size: 18px;">24</div>
+                          <div style="color: #888; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.5px;">TOTAL</div>
+                      </div>
+                      <div style="flex: 1; border: 1px solid #00D4AA; background: #0A2A0A; padding: 10px; text-align: center;">
+                          <div style="color: #00D4AA; font-family: 'JetBrains Mono', monospace; font-weight: bold; font-size: 18px;">8</div>
+                          <div style="color: #888; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.5px;">THIS MONTH</div>
+                      </div>
+                      <div style="flex: 1; border: 1px solid #FF6B6B; background: #2A0A0A; padding: 10px; text-align: center;">
+                          <div style="color: #FF6B6B; font-family: 'JetBrains Mono', monospace; font-weight: bold; font-size: 18px;">2.1</div>
+                          <div style="color: #888; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.5px;">AVG EXP</div>
+                      </div>
+                  </div>
+                  
+                  <div style="color: #00D4AA; font-size: 14px; text-align: center; padding: 20px; border: 1px dashed #00D4AA;">
+                      <strong>✨ Improvements:</strong><br>
+                      • Reduced padding and spacing throughout<br>
+                      • Added quick stats overview section<br>
+                      • More compact transaction items<br>
+                      • Increased transaction list from 10 to 15 items<br>
+                      • Better space utilization overall
+                  </div>
+             </div>
+             
+             <!-- Sample wallet card to show context -->
+             <div class="pixel-card">
+                 <div class="wallet-header">
+                     <svg class="wallet-icon" fill="currentColor" viewBox="0 0 24 24">
+                         <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                     </svg>
+                     <h2 class="wallet-title">WALLET BALANCE</h2>
+                 </div>
+                 
+                 <div class="balance-box">
+                     <div class="balance-amount">◎ 12.45 SOL</div>
+                 </div>
+                 
+                 <div class="stats-row">
+                     <div class="stat-card income-card">
+                         <div class="stat-header">
+                             <svg class="stat-icon income-text" fill="currentColor" viewBox="0 0 24 24">
+                                 <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+                             </svg>
+                             <span class="stat-label income-text">INCOME</span>
+                         </div>
+                         <div class="stat-amount income-text">◎ 15.20 SOL</div>
+                     </div>
+                     
+                     <div class="stat-card expense-card">
+                         <div class="stat-header">
+                             <svg class="stat-icon expense-text" fill="currentColor" viewBox="0 0 24 24">
+                                 <path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/>
+                             </svg>
+                             <span class="stat-label expense-text">EXPENSES</span>
+                         </div>
+                         <div class="stat-amount expense-text">◎ 2.75 SOL</div>
+                     </div>
+                 </div>
+             </div>
+         </div>
+     </div>
+ </body>
+</html>

@@ -3,6 +3,7 @@ package com.solana.solmind.ui.components
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -20,6 +21,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,7 +33,8 @@ import kotlinx.coroutines.delay
 fun AnimatedModeSwitcher(
     currentMode: AccountMode,
     onModeChange: (AccountMode) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    compact: Boolean = false
 ) {
     var isTransitioning by remember { mutableStateOf(false) }
     var showTransitionOverlay by remember { mutableStateOf(false) }
@@ -47,30 +50,150 @@ fun AnimatedModeSwitcher(
     }
     
     Box(modifier = modifier) {
-        // Main switcher
-        ModeSwitcherButton(
-            currentMode = currentMode,
-            onClick = { newMode ->
-                if (newMode != currentMode) {
-                    isTransitioning = true
-                    onModeChange(newMode)
+        // Main switcher - choose between compact and full version
+        if (compact) {
+            CompactModeSwitcher(
+                currentMode = currentMode,
+                onClick = { newMode ->
+                    if (newMode != currentMode) {
+                        isTransitioning = true
+                        onModeChange(newMode)
+                    }
                 }
-            }
-        )
-        
-        // Movie-like transition overlay
-        AnimatedVisibility(
-            visible = showTransitionOverlay,
-            enter = fadeIn(animationSpec = tween(200)) + scaleIn(
-                initialScale = 0.8f,
-                animationSpec = tween(200)
-            ),
-            exit = fadeOut(animationSpec = tween(200)) + scaleOut(
-                targetScale = 1.2f,
-                animationSpec = tween(200)
             )
+        } else {
+            ModeSwitcherButton(
+                currentMode = currentMode,
+                onClick = { newMode ->
+                    if (newMode != currentMode) {
+                        isTransitioning = true
+                        onModeChange(newMode)
+                    }
+                }
+            )
+        }
+        
+        // Movie-like transition overlay (only for full version)
+        if (!compact) {
+            AnimatedVisibility(
+                visible = showTransitionOverlay,
+                enter = fadeIn(animationSpec = tween(200)) + scaleIn(
+                    initialScale = 0.8f,
+                    animationSpec = tween(200)
+                ),
+                exit = fadeOut(animationSpec = tween(200)) + scaleOut(
+                    targetScale = 1.2f,
+                    animationSpec = tween(200)
+                )
+            ) {
+                TransitionOverlay(targetMode = currentMode)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactModeSwitcher(
+    currentMode: AccountMode,
+    onClick: (AccountMode) -> Unit
+) {
+    val isOnchain = currentMode == AccountMode.ONCHAIN
+    
+    val switchOffset by animateFloatAsState(
+        targetValue = if (isOnchain) 0f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "switch_offset"
+    )
+    
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isOnchain) OnchainPrimary else OffchainPrimary,
+        animationSpec = tween(300),
+        label = "background_color"
+    )
+    
+    Row(
+        modifier = Modifier
+            .background(
+                color = backgroundColor.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(20.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = backgroundColor.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(20.dp)
+            )
+            .padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Onchain option
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .background(
+                    color = if (isOnchain) backgroundColor else Color.Transparent,
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .clickable { onClick(AccountMode.ONCHAIN) }
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center
         ) {
-            TransitionOverlay(targetMode = currentMode)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                OnchainIcon(
+                    modifier = Modifier.size(16.dp),
+                    color = if (isOnchain) Color.White else OnchainPrimary.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "ON",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
+                        letterSpacing = 1.sp
+                    ),
+                    color = if (isOnchain) Color.White else OnchainPrimary.copy(alpha = 0.7f)
+                )
+            }
+        }
+        
+        // Offchain option
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .background(
+                    color = if (!isOnchain) backgroundColor else Color.Transparent,
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .clickable { onClick(AccountMode.OFFCHAIN) }
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                OffchainIcon(
+                    modifier = Modifier.size(16.dp),
+                    color = if (!isOnchain) Color.White else OffchainPrimary.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "OFF",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
+                        letterSpacing = 1.sp
+                    ),
+                    color = if (!isOnchain) Color.White else OffchainPrimary.copy(alpha = 0.7f)
+                )
+            }
         }
     }
 }
