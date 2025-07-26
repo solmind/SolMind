@@ -1,10 +1,12 @@
 package com.solana.solmind.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -787,21 +789,38 @@ fun ModelItem(
                             selected = isSelected,
                             onClick = { 
                                 if (!modelState.model.isLocal) {
-                                    // Cloud model
-                                    onModelSelected(modelState.model)
+                                    // Cloud model - redirect to upgrade page
+                                    onUpgradeClicked()
                                 } else if (modelState.status == ModelDownloadStatus.DOWNLOADED) {
                                     onModelSelected(modelState.model)
                                 }
                             },
-                            enabled = !modelState.model.isLocal || modelState.status == ModelDownloadStatus.DOWNLOADED
+                            enabled = modelState.model.isLocal && modelState.status == ModelDownloadStatus.DOWNLOADED
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
-                            Text(
-                                text = modelState.model.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = modelState.model.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (!modelState.model.isLocal) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "COMING",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier
+                                            .background(
+                                                MaterialTheme.colorScheme.tertiaryContainer,
+                                                RoundedCornerShape(4.dp)
+                                            )
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
                             if (modelState.model.isDefault) {
                                 Text(
                                     text = "Default",
@@ -830,31 +849,14 @@ fun ModelItem(
                 
                 // Action button
                 if (!modelState.model.isLocal) {
-                    // Cloud model
-                    if (modelState.model.requiresSubscription && !isSubscribed) {
-                        Button(
-                            onClick = { onUpgradeClicked() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.tertiary
-                            )
-                        ) {
-                            Icon(
-                                Icons.Default.Star,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Upgrade")
-                        }
-                    } else {
-                        Row {
-                            Icon(
-                                Icons.Default.CloudDone,
-                                contentDescription = "Cloud model",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                    // Cloud model - show as coming soon
+                    Row {
+                        Icon(
+                            Icons.Default.CloudQueue,
+                            contentDescription = "Coming soon",
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 } else {
                     when (modelState.status) {
