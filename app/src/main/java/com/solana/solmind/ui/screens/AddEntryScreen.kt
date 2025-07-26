@@ -4,6 +4,7 @@ package com.solana.solmind.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -281,6 +282,9 @@ fun WelcomeMessage(
     onTestFlanT5: ((String) -> Unit)? = null,
     onUpgradeClicked: (() -> Unit)? = null
 ) {
+    // Agent selection state - Transaction Parser is always selected since it's the only available agent
+    var selectedAgent by remember { mutableStateOf("transaction_parser") }
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -308,7 +312,7 @@ fun WelcomeMessage(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "I can help you add transactions by analyzing your text descriptions or receipt images. Just tell me about your transaction!",
+                text = "I can help you add transactions by analyzing your text descriptions or receipt images. Choose your agent mode below!",
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -322,6 +326,14 @@ fun WelcomeMessage(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text(
+                    text = "Select Agent Mode:",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 // Agent Mode Selection
@@ -329,38 +341,88 @@ fun WelcomeMessage(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Button(
-                        onClick = { onTestFlanT5("Bought coffee for $4.50 at Starbucks") },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary
-                        )
+                    // Transaction Parser Agent
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { 
+                                selectedAgent = "transaction_parser"
+                                onTestFlanT5("Bought coffee for $4.50 at Starbucks")
+                            },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (selectedAgent == "transaction_parser") 
+                                MaterialTheme.colorScheme.primary 
+                            else 
+                                MaterialTheme.colorScheme.surface
+                        ),
+                        border = if (selectedAgent == "transaction_parser") 
+                            null 
+                        else 
+                            BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Column(
+                            modifier = Modifier.padding(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Analytics,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = if (selectedAgent == "transaction_parser") 
+                                        MaterialTheme.colorScheme.onPrimary 
+                                    else 
+                                        MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                if (selectedAgent == "transaction_parser") {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = "Selected",
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "Transaction Parser",
                                 style = MaterialTheme.typography.labelSmall,
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                fontWeight = if (selectedAgent == "transaction_parser") FontWeight.Bold else FontWeight.Normal,
+                                color = if (selectedAgent == "transaction_parser") 
+                                    MaterialTheme.colorScheme.onPrimary 
+                                else 
+                                    MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Available",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (selectedAgent == "transaction_parser") 
+                                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) 
+                                else 
+                                    MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
                     
-                    Button(
-                        onClick = { onUpgradeClicked?.invoke() },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.7f)
-                        )
+                    // Finance Advisor Agent
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { 
+                                onUpgradeClicked?.invoke()
+                            },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                     ) {
                         Column(
+                            modifier = Modifier.padding(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(
@@ -369,23 +431,41 @@ fun WelcomeMessage(
                                 Icon(
                                     Icons.Default.TrendingUp,
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "COMING",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold
+                                Icon(
+                                    Icons.Default.CloudQueue,
+                                    contentDescription = "Coming Soon",
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.tertiary
                                 )
                             }
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "Finance Advisor",
                                 style = MaterialTheme.typography.labelSmall,
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Text(
+                                text = "COMING SOON",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
                 }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Currently using: ${if (selectedAgent == "transaction_parser") "Transaction Parser" else "None"}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
