@@ -55,6 +55,7 @@ import com.solana.solmind.data.model.TransactionType
 import com.solana.solmind.ui.viewmodel.AddEntryViewModel
 import com.solana.solmind.ui.viewmodel.AddEntryUiState
 import com.solana.solmind.ui.viewmodel.ChatMessage
+import com.solana.solmind.ui.viewmodel.ModelManagerViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -65,13 +66,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.solana.solmind.service.SubscriptionManager
+import com.solana.solmind.service.ModelManager
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun AddEntryScreen(
     navController: NavController,
-    viewModel: AddEntryViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel(),
+    modelManagerViewModel: ModelManagerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val currencyPreferenceManager = remember { CurrencyPreferenceManager(context) }
@@ -81,6 +84,7 @@ fun AddEntryScreen(
     val uiState by viewModel.uiState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val currentAccountMode by viewModel.currentAccountMode.collectAsState()
+    val selectedModel by modelManagerViewModel.selectedModel.collectAsState()
     
     var showUpgradeDialog by remember { mutableStateOf(false) }
     
@@ -145,6 +149,7 @@ fun AddEntryScreen(
                 onSelectImage = { viewModel.selectImage() },
                 onTestFlanT5 = { testMessage -> viewModel.parseWithFlanT5(testMessage) },
                 onUpgradeClicked = { showUpgradeDialog = true },
+                selectedModel = selectedModel,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
@@ -172,6 +177,7 @@ fun ChatInterface(
     onSelectImage: () -> Unit,
     onTestFlanT5: ((String) -> Unit)? = null,
     onUpgradeClicked: (() -> Unit)? = null,
+    selectedModel: com.solana.solmind.service.LanguageModel? = null,
     modifier: Modifier = Modifier
 ) {
     var messageText by remember { mutableStateOf("") }
@@ -184,7 +190,8 @@ fun ChatInterface(
         if (chatMessages.isEmpty()) {
             WelcomeMessage(
                 onTestFlanT5 = onTestFlanT5,
-                onUpgradeClicked = onUpgradeClicked
+                onUpgradeClicked = onUpgradeClicked,
+                selectedModel = selectedModel
             )
         }
         
@@ -280,7 +287,8 @@ fun ChatInterface(
 @Composable
 fun WelcomeMessage(
     onTestFlanT5: ((String) -> Unit)? = null,
-    onUpgradeClicked: (() -> Unit)? = null
+    onUpgradeClicked: (() -> Unit)? = null,
+    selectedModel: com.solana.solmind.service.LanguageModel? = null
 ) {
     // Agent selection state - Transaction Parser is always selected since it's the only available agent
     var selectedAgent by remember { mutableStateOf("transaction_parser") }
@@ -321,7 +329,7 @@ fun WelcomeMessage(
             if (onTestFlanT5 != null) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "✨ Powered by FLAN-T5-small AI Model",
+                    text = "✨ Powered by ${selectedModel?.name ?: "FLAN-T5-small"} AI Model",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
