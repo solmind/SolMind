@@ -11,31 +11,31 @@ import java.util.Date
 @Dao
 interface LedgerDao {
     
-    @Query("SELECT * FROM ledger_entries ORDER BY date DESC")
+    @Query("SELECT * FROM ledger_entries ORDER BY date DESC, createdAt DESC")
     fun getAllEntries(): Flow<List<LedgerEntry>>
     
-    @Query("SELECT * FROM ledger_entries WHERE accountMode = :accountMode ORDER BY date DESC")
+    @Query("SELECT * FROM ledger_entries WHERE accountMode = :accountMode ORDER BY date DESC, createdAt DESC")
     fun getEntriesByAccountMode(accountMode: AccountMode): Flow<List<LedgerEntry>>
     
     @Query("SELECT * FROM ledger_entries WHERE id = :id")
     suspend fun getEntryById(id: Long): LedgerEntry?
     
-    @Query("SELECT * FROM ledger_entries WHERE type = :type ORDER BY date DESC")
+    @Query("SELECT * FROM ledger_entries WHERE type = :type ORDER BY date DESC, createdAt DESC")
     fun getEntriesByType(type: TransactionType): Flow<List<LedgerEntry>>
     
-    @Query("SELECT * FROM ledger_entries WHERE type = :type AND accountMode = :accountMode ORDER BY date DESC")
+    @Query("SELECT * FROM ledger_entries WHERE type = :type AND accountMode = :accountMode ORDER BY date DESC, createdAt DESC")
     fun getEntriesByTypeAndAccountMode(type: TransactionType, accountMode: AccountMode): Flow<List<LedgerEntry>>
     
-    @Query("SELECT * FROM ledger_entries WHERE category = :category ORDER BY date DESC")
+    @Query("SELECT * FROM ledger_entries WHERE category = :category ORDER BY date DESC, createdAt DESC")
     fun getEntriesByCategory(category: TransactionCategory): Flow<List<LedgerEntry>>
     
-    @Query("SELECT * FROM ledger_entries WHERE category = :category AND accountMode = :accountMode ORDER BY date DESC")
+    @Query("SELECT * FROM ledger_entries WHERE category = :category AND accountMode = :accountMode ORDER BY date DESC, createdAt DESC")
     fun getEntriesByCategoryAndAccountMode(category: TransactionCategory, accountMode: AccountMode): Flow<List<LedgerEntry>>
     
-    @Query("SELECT * FROM ledger_entries WHERE date BETWEEN :startDate AND :endDate ORDER BY date DESC")
+    @Query("SELECT * FROM ledger_entries WHERE date BETWEEN :startDate AND :endDate ORDER BY date DESC, createdAt DESC")
     fun getEntriesByDateRange(startDate: Date, endDate: Date): Flow<List<LedgerEntry>>
     
-    @Query("SELECT * FROM ledger_entries WHERE date BETWEEN :startDate AND :endDate AND accountMode = :accountMode ORDER BY date DESC")
+    @Query("SELECT * FROM ledger_entries WHERE date BETWEEN :startDate AND :endDate AND accountMode = :accountMode ORDER BY date DESC, createdAt DESC")
     fun getEntriesByDateRangeAndAccountMode(startDate: Date, endDate: Date, accountMode: AccountMode): Flow<List<LedgerEntry>>
     
     @Query("SELECT * FROM ledger_entries WHERE solanaTransactionHash = :hash")
@@ -68,7 +68,7 @@ interface LedgerDao {
     @Query("DELETE FROM ledger_entries WHERE id = :id")
     suspend fun deleteEntryById(id: Long)
     
-    @Query("SELECT * FROM ledger_entries WHERE description LIKE '%' || :query || '%' OR category LIKE '%' || :query || '%' ORDER BY date DESC")
+    @Query("SELECT * FROM ledger_entries WHERE description LIKE '%' || :query || '%' OR category LIKE '%' || :query || '%' ORDER BY date DESC, createdAt DESC")
     fun searchEntries(query: String): Flow<List<LedgerEntry>>
 }
 
