@@ -16,7 +16,8 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val repository: LedgerRepository,
-    private val accountModeManager: AccountModeManager
+    private val accountModeManager: AccountModeManager,
+    private val syncManager: com.solana.solmind.manager.SyncManager
 ) : ViewModel() {
     
     val currentAccountMode = accountModeManager.currentAccountMode
@@ -88,7 +89,13 @@ class HomeViewModel @Inject constructor(
         )
     
     fun setAccountMode(accountMode: AccountMode) {
+        val previousMode = accountModeManager.getCurrentAccountMode()
         accountModeManager.setAccountMode(accountMode)
+        
+        // Trigger immediate sync when switching to on-chain mode
+        if (accountMode == AccountMode.ONCHAIN && previousMode == AccountMode.OFFCHAIN) {
+            syncManager.triggerImmediateSync()
+        }
     }
     
     fun refreshData() {

@@ -41,6 +41,7 @@ enum class AccountMode {
 }
 
 enum class TransactionCategory {
+    // Traditional off-chain categories
     FOOD_DINING,
     TRANSPORTATION,
     SHOPPING,
@@ -54,7 +55,19 @@ enum class TransactionCategory {
     FREELANCE,
     BUSINESS,
     GIFTS,
-    OTHER;
+    OTHER,
+    
+    // Blockchain-specific categories
+    DEFI_SWAP,
+    DEFI_LENDING,
+    DEFI_STAKING,
+    NFT_PURCHASE,
+    NFT_SALE,
+    TOKEN_TRANSFER,
+    BRIDGE,
+    GAMING,
+    MINTING,
+    TRADING;
     
     fun getDisplayName(): String {
         return when (this) {
@@ -72,6 +85,16 @@ enum class TransactionCategory {
             BUSINESS -> "Business"
             GIFTS -> "Gifts"
             OTHER -> "Other"
+            DEFI_SWAP -> "DeFi Swap"
+            DEFI_LENDING -> "DeFi Lending"
+            DEFI_STAKING -> "DeFi Staking"
+            NFT_PURCHASE -> "NFT Purchase"
+            NFT_SALE -> "NFT Sale"
+            TOKEN_TRANSFER -> "Token Transfer"
+            BRIDGE -> "Cross-chain Bridge"
+            GAMING -> "Gaming"
+            MINTING -> "Minting"
+            TRADING -> "Trading"
         }
     }
     
@@ -91,6 +114,16 @@ enum class TransactionCategory {
             BUSINESS -> "🏢"
             GIFTS -> "🎁"
             OTHER -> "📝"
+            DEFI_SWAP -> "🔄"
+            DEFI_LENDING -> "🏦"
+            DEFI_STAKING -> "🔒"
+            NFT_PURCHASE -> "🖼️"
+            NFT_SALE -> "💎"
+            TOKEN_TRANSFER -> "📤"
+            BRIDGE -> "🌉"
+            GAMING -> "🎮"
+            MINTING -> "⚒️"
+            TRADING -> "📊"
         }
     }
 }

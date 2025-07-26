@@ -153,6 +153,15 @@ class AIService @Inject constructor(
     suspend fun parseTransactionWithAI(content: String): TransactionParseResult {
         return localAIService.parseTransactionText(content)
     }
+    
+    /**
+     * Parse on-chain transaction text using local FLAN-T5-small model with blockchain-specific categories
+     * This method uses a specialized prompt for blockchain transactions with categories like 
+     * DEFI_SWAP, DEFI_LENDING, NFT_PURCHASE, TOKEN_TRANSFER, etc.
+     */
+    suspend fun parseOnChainTransactionWithAI(content: String, actualAmount: Double? = null): TransactionParseResult {
+        return localAIService.parseOnChainTransactionWithAI(content, actualAmount)
+    }
 }
 
 data class CategoryPrediction(

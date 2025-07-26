@@ -142,7 +142,7 @@ class LedgerRepository @Inject constructor(
                 // Check if transaction already exists
                 val existingEntry = ledgerDao.getEntryByTransactionHash(transaction.signature)
                 if (existingEntry == null) {
-                    // Create new ledger entry from Solana transaction
+                    // Create new ledger entry from Solana transaction with AI inference
                     val entry = createLedgerEntryFromSolanaTransaction(transaction, address)
                     val entryId = ledgerDao.insertEntry(entry)
                     newEntries.add(entry.copy(id = entryId))
@@ -158,43 +158,73 @@ class LedgerRepository @Inject constructor(
         }
     }
     
-    private fun createLedgerEntryFromSolanaTransaction(
+    private suspend fun createLedgerEntryFromSolanaTransaction(
         transaction: com.solana.solmind.data.model.SolanaTransaction,
         userAddress: String
     ): LedgerEntry {
         val isIncoming = transaction.toAddress == userAddress
         val type = if (isIncoming) TransactionType.INCOME else TransactionType.EXPENSE
         
-        // Determine category based on transaction type and memo
-        val category = when (transaction.type) {
+        // Create a descriptive text for AI analysis
+        val transactionText = buildString {
+            append("${transaction.amount} SOL ")
+            append(if (isIncoming) "received from" else "sent to")
+            append(" ${if (isIncoming) transaction.fromAddress else transaction.toAddress} ")
+            append("via ${transaction.type.name.replace("_", " ").lowercase()} ")
+            transaction.memo?.let { memo ->
+                append("with memo: $memo")
+            }
+        }
+        
+        // Use AI service to infer category and description for on-chain transactions
+        val aiResult = try {
+            aiService.parseOnChainTransactionWithAI(transactionText, transaction.amount)
+        } catch (e: Exception) {
+            // Fallback to hardcoded mapping if AI fails
+            null
+        }
+        
+        // Use AI result or fallback to blockchain-specific category mapping
+        val category = aiResult?.category ?: when (transaction.type) {
             com.solana.solmind.data.model.SolanaTransactionType.TRANSFER -> {
-                if (isIncoming) TransactionCategory.OTHER else TransactionCategory.OTHER
+                TransactionCategory.TOKEN_TRANSFER
             }
             com.solana.solmind.data.model.SolanaTransactionType.TOKEN_TRANSFER -> {
-                TransactionCategory.INVESTMENT
+                TransactionCategory.TOKEN_TRANSFER
             }
             com.solana.solmind.data.model.SolanaTransactionType.SWAP -> {
-                TransactionCategory.INVESTMENT
+                TransactionCategory.DEFI_SWAP
             }
             com.solana.solmind.data.model.SolanaTransactionType.STAKE -> {
-                TransactionCategory.INVESTMENT
+                TransactionCategory.DEFI_STAKING
             }
-            com.solana.solmind.data.model.SolanaTransactionType.NFT_MINT,
+            com.solana.solmind.data.model.SolanaTransactionType.NFT_MINT -> {
+                TransactionCategory.MINTING
+            }
             com.solana.solmind.data.model.SolanaTransactionType.NFT_TRANSFER -> {
-                TransactionCategory.ENTERTAINMENT
+                if (isIncoming) TransactionCategory.NFT_SALE else TransactionCategory.NFT_PURCHASE
             }
             else -> TransactionCategory.OTHER
         }
         
-        val description = transaction.memo ?: run {
-            val typeStr = transaction.type.name.replace("_", " ").lowercase()
-                .replaceFirstChar { it.uppercase() }
-            val directionStr = if (isIncoming) "Received" else "Sent"
-            "$directionStr - $typeStr"
-        }
+        // Use AI-generated description or create a default one
+        val description = aiResult?.description?.takeIf { it.isNotBlank() && it != "Transaction" } 
+            ?: transaction.memo 
+            ?: run {
+                val typeStr = transaction.type.name.replace("_", " ").lowercase()
+                    .replaceFirstChar { it.uppercase() }
+                val directionStr = if (isIncoming) "Received" else "Sent"
+                "$directionStr - $typeStr"
+            }
+        
+        // Use AI confidence or default based on whether AI was used
+        val confidence = aiResult?.confidence ?: 0.7f
+        
+        // Use the actual transaction amount, not the AI-parsed amount
+        val finalAmount = transaction.amount
         
         return LedgerEntry(
-            amount = transaction.amount,
+            amount = finalAmount,
             description = description,
             category = category,
             type = type,
@@ -203,7 +233,7 @@ class LedgerRepository @Inject constructor(
             solanaTransactionHash = transaction.signature,
             solanaAddress = userAddress,
             isAutoDetected = true,
-            confidence = 0.9f
+            confidence = confidence
         )
     }
 }

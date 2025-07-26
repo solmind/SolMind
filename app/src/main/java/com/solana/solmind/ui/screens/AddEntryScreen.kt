@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.solana.solmind.data.model.AccountMode
 import com.solana.solmind.data.model.TransactionCategory
 import com.solana.solmind.data.model.TransactionType
 import com.solana.solmind.ui.viewmodel.AddEntryViewModel
@@ -53,6 +54,12 @@ import com.solana.solmind.ui.viewmodel.ChatMessage
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
+import com.solana.solmind.utils.CurrencyFormatter
+import com.solana.solmind.data.manager.CurrencyPreferenceManager
+import com.solana.solmind.data.manager.CurrencyDisplayMode
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -60,8 +67,13 @@ fun AddEntryScreen(
     navController: NavController,
     viewModel: AddEntryViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val currencyPreferenceManager = remember { CurrencyPreferenceManager(context) }
+    val currencyDisplayMode by currencyPreferenceManager.currencyDisplayMode.collectAsState(initial = CurrencyDisplayMode.SOL)
+    
     val uiState by viewModel.uiState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val currentAccountMode by viewModel.currentAccountMode.collectAsState()
     
     // Removed automatic navigation on save to keep user on chatbot interface
     
@@ -91,6 +103,7 @@ fun AddEntryScreen(
             TransactionEditScreen(
                 uiState = uiState,
                 isLoading = isLoading,
+                currencyDisplayMode = currencyDisplayMode,
                 onAmountChange = { viewModel.updateAmount(it) },
                 onDescriptionChange = { viewModel.updateDescription(it) },
                 onTypeChange = { viewModel.updateTransactionType(it) },
@@ -107,6 +120,8 @@ fun AddEntryScreen(
             TransactionPreviewScreen(
                 uiState = uiState,
                 isLoading = isLoading,
+                currencyDisplayMode = currencyDisplayMode,
+                accountMode = currentAccountMode,
                 onConfirm = { viewModel.confirmTransaction() },
                 onEdit = { viewModel.editTransaction() },
                 modifier = Modifier
@@ -443,6 +458,8 @@ fun TypingIndicator() {
 fun TransactionPreviewScreen(
     uiState: AddEntryUiState,
     isLoading: Boolean,
+    currencyDisplayMode: CurrencyDisplayMode,
+    accountMode: AccountMode,
     onConfirm: () -> Unit,
     onEdit: () -> Unit,
     modifier: Modifier = Modifier
@@ -502,7 +519,7 @@ fun TransactionPreviewScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = NumberFormat.getCurrencyInstance(Locale.US).format(uiState.amount.toDoubleOrNull() ?: 0.0),
+                        text = CurrencyFormatter.formatAmount(uiState.amount.toDoubleOrNull() ?: 0.0, currencyDisplayMode, accountMode),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = if (uiState.transactionType == TransactionType.INCOME) 
@@ -664,6 +681,7 @@ fun TransactionPreviewScreen(
 fun TransactionEditScreen(
     uiState: AddEntryUiState,
     isLoading: Boolean,
+    currencyDisplayMode: CurrencyDisplayMode,
     onAmountChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onTypeChange: (TransactionType) -> Unit,
@@ -732,7 +750,7 @@ fun TransactionEditScreen(
                 OutlinedTextField(
                     value = uiState.amount,
                     onValueChange = onAmountChange,
-                    label = { Text("Amount") },
+                    label = { Text("Amount (${if (currencyDisplayMode == CurrencyDisplayMode.USD) "USD" else "SOL"})") },
                     leadingIcon = {
                         Icon(Icons.Default.AttachMoney, contentDescription = null)
                     },

@@ -28,6 +28,12 @@ import com.solana.solmind.ui.viewmodel.HomeViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
+import com.solana.solmind.utils.CurrencyFormatter
+import com.solana.solmind.data.manager.CurrencyPreferenceManager
+import com.solana.solmind.data.manager.CurrencyDisplayMode
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +41,10 @@ fun HomeScreen(
     navController: NavController,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val currencyPreferenceManager = remember { CurrencyPreferenceManager(context) }
+    val currencyDisplayMode by currencyPreferenceManager.currencyDisplayMode.collectAsState(initial = CurrencyDisplayMode.SOL)
+    
     val entries by viewModel.entries.collectAsState()
     val totalIncome by viewModel.totalIncome.collectAsState()
     val totalExpenses by viewModel.totalExpenses.collectAsState()
@@ -85,7 +95,7 @@ fun HomeScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = NumberFormat.getCurrencyInstance().format(balance),
+                        text = CurrencyFormatter.formatAmount(balance, currencyDisplayMode, currentAccountMode),
                         style = MaterialTheme.typography.headlineLarge,
                         color = Color.White,
                         fontWeight = FontWeight.Bold
@@ -125,7 +135,7 @@ fun HomeScreen(
                             color = IncomeGreen
                         )
                         Text(
-                            text = NumberFormat.getCurrencyInstance().format(totalIncome),
+                            text = CurrencyFormatter.formatAmount(totalIncome, currencyDisplayMode, currentAccountMode),
                             style = MaterialTheme.typography.titleMedium,
                             color = IncomeGreen,
                             fontWeight = FontWeight.Bold
@@ -158,7 +168,7 @@ fun HomeScreen(
                             color = ExpenseRed
                         )
                         Text(
-                            text = NumberFormat.getCurrencyInstance().format(totalExpenses),
+                            text = CurrencyFormatter.formatAmount(totalExpenses, currencyDisplayMode, currentAccountMode),
                             style = MaterialTheme.typography.titleMedium,
                             color = ExpenseRed,
                             fontWeight = FontWeight.Bold
@@ -179,6 +189,8 @@ fun HomeScreen(
         items(entries.take(10)) { entry ->
             TransactionItem(
                 entry = entry,
+                currencyDisplayMode = currencyDisplayMode,
+                accountMode = currentAccountMode,
                 onClick = { /* Navigate to detail */ }
             )
         }
@@ -216,6 +228,8 @@ fun HomeScreen(
 @Composable
 fun TransactionItem(
     entry: LedgerEntry,
+    currencyDisplayMode: CurrencyDisplayMode,
+    accountMode: AccountMode,
     onClick: () -> Unit
 ) {
     val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
@@ -290,7 +304,7 @@ fun TransactionItem(
             
             // Amount
             Text(
-                text = "${if (isIncome) "+" else "-"}${NumberFormat.getCurrencyInstance().format(entry.amount)}",
+                text = CurrencyFormatter.formatTransactionAmount(entry.amount, isIncome, currencyDisplayMode, accountMode),
                 style = MaterialTheme.typography.titleMedium,
                 color = if (isIncome) IncomeGreen else ExpenseRed,
                 fontWeight = FontWeight.Bold
@@ -315,5 +329,16 @@ fun getCategoryColor(category: TransactionCategory): androidx.compose.ui.graphic
         TransactionCategory.BUSINESS -> androidx.compose.ui.graphics.Color(0xFFE17055)
         TransactionCategory.GIFTS -> androidx.compose.ui.graphics.Color(0xFFA29BFE)
         TransactionCategory.OTHER -> androidx.compose.ui.graphics.Color(0xFF636E72)
+        // Blockchain-specific category colors
+        TransactionCategory.DEFI_SWAP -> androidx.compose.ui.graphics.Color(0xFF9B59B6)
+        TransactionCategory.DEFI_LENDING -> androidx.compose.ui.graphics.Color(0xFF3498DB)
+        TransactionCategory.DEFI_STAKING -> androidx.compose.ui.graphics.Color(0xFF2ECC71)
+        TransactionCategory.NFT_PURCHASE -> androidx.compose.ui.graphics.Color(0xFFE74C3C)
+        TransactionCategory.NFT_SALE -> androidx.compose.ui.graphics.Color(0xFFF39C12)
+        TransactionCategory.TOKEN_TRANSFER -> androidx.compose.ui.graphics.Color(0xFF1ABC9C)
+        TransactionCategory.BRIDGE -> androidx.compose.ui.graphics.Color(0xFF34495E)
+        TransactionCategory.GAMING -> androidx.compose.ui.graphics.Color(0xFFE67E22)
+        TransactionCategory.MINTING -> androidx.compose.ui.graphics.Color(0xFF8E44AD)
+        TransactionCategory.TRADING -> androidx.compose.ui.graphics.Color(0xFF27AE60)
     }
 }

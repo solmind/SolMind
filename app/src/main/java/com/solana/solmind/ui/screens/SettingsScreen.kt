@@ -20,6 +20,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.solana.solmind.data.manager.ThemeMode
 import com.solana.solmind.data.manager.ThemePreferenceManager
+import com.solana.solmind.data.manager.CurrencyPreferenceManager
+import com.solana.solmind.data.manager.CurrencyDisplayMode
 import com.solana.solmind.data.model.AccountMode
 import com.solana.solmind.service.LanguageModel
 import com.solana.solmind.service.ModelDownloadStatus
@@ -28,6 +30,7 @@ import com.solana.solmind.service.SubscriptionTier
 import com.solana.solmind.service.SubscriptionBenefits
 import com.solana.solmind.ui.viewmodel.ModelManagerViewModel
 import com.solana.solmind.ui.viewmodel.WalletViewModel
+import com.solana.solmind.manager.SyncManager
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,21 +42,26 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val themePreferenceManager = remember { ThemePreferenceManager(context) }
+    val currencyPreferenceManager = remember { CurrencyPreferenceManager(context) }
     val subscriptionManager = remember { SubscriptionManager(context) }
+    val syncManager = remember { SyncManager(context) }
     
     var enableNotifications by remember { mutableStateOf(true) }
-    var autoSync by remember { mutableStateOf(true) }
-    var syncInterval by remember { mutableStateOf("15 minutes") }
+    val autoSync by syncManager.isAutoSyncEnabled.collectAsState()
+    val currentSyncInterval by syncManager.syncInterval.collectAsState()
+    var showSyncIntervalDialog by remember { mutableStateOf(false) }
     var showConfidenceScore by remember { mutableStateOf(true) }
     var showAddWalletDialog by remember { mutableStateOf(false) }
     var showOnchainThemeDialog by remember { mutableStateOf(false) }
     var showOffchainThemeDialog by remember { mutableStateOf(false) }
+    var showCurrencyDialog by remember { mutableStateOf(false) }
     var showModelSelectionDialog by remember { mutableStateOf(false) }
     var showUpgradeDialog by remember { mutableStateOf(false) }
     
     val currentAccountMode by walletViewModel.currentAccountMode.collectAsState()
     val onchainThemeMode by themePreferenceManager.onchainThemeMode.collectAsState(initial = ThemeMode.LIGHT)
     val offchainThemeMode by themePreferenceManager.offchainThemeMode.collectAsState(initial = ThemeMode.DARK)
+    val currencyDisplayMode by currencyPreferenceManager.currencyDisplayMode.collectAsState(initial = CurrencyDisplayMode.SOL)
     val selectedModel by modelManagerViewModel.selectedModel.collectAsState()
     val modelStates by modelManagerViewModel.modelStates.collectAsState()
     val isSubscribed by subscriptionManager.isSubscribed.collectAsState()
@@ -168,6 +176,18 @@ fun SettingsScreen(
                 )
             }
             
+            // Currency Settings Section (only show in onchain mode)
+            if (currentAccountMode == AccountMode.ONCHAIN) {
+                SettingsSection(title = "Currency Settings") {
+                    SettingsItem(
+                        icon = Icons.Default.AttachMoney,
+                        title = "Display Currency",
+                        subtitle = "Show amounts in: ${if (currencyDisplayMode == CurrencyDisplayMode.USD) "USD ($)" else "SOL (◎)"}",
+                        onClick = { showCurrencyDialog = true }
+                    )
+                }
+            }
+            
             // App Settings Section
             SettingsSection(title = "App Settings") {
                 SettingsItem(
@@ -212,21 +232,23 @@ fun SettingsScreen(
                     subtitle = "Automatically sync wallet transactions",
                     trailing = {
                         Switch(
-                            checked = autoSync,
-                            onCheckedChange = { autoSync = it }
-                        )
+                                    checked = autoSync,
+                                    onCheckedChange = { enabled ->
+                                        syncManager.setAutoSyncEnabled(enabled)
+                                    }
+                                )
                     }
                 )
                 
                 if (autoSync) {
                     SettingsItem(
-                        icon = Icons.Default.Settings,
-                        title = "Sync Interval",
-                        subtitle = syncInterval,
-                        onClick = {
-                            // Show interval selection dialog
-                        }
-                    )
+                    icon = Icons.Default.Settings,
+                    title = "Sync Interval",
+                    subtitle = currentSyncInterval.displayName,
+                    onClick = {
+                        showSyncIntervalDialog = true
+                    }
+                )
                 }
             }
             
@@ -363,6 +385,20 @@ fun SettingsScreen(
         )
     }
     
+    // Currency Selection Dialog
+    if (showCurrencyDialog) {
+        CurrencySelectionDialog(
+            currentMode = currencyDisplayMode,
+            onDismiss = { showCurrencyDialog = false },
+            onModeSelected = { mode ->
+                coroutineScope.launch {
+                    currencyPreferenceManager.setCurrencyDisplayMode(mode)
+                }
+                showCurrencyDialog = false
+            }
+        )
+    }
+    
     // Add Wallet Dialog
     if (showAddWalletDialog) {
         AddWalletDialog(
@@ -414,6 +450,125 @@ fun SettingsScreen(
             }
         )
     }
+    
+    // Sync Interval Dialog
+    if (showSyncIntervalDialog) {
+        SyncIntervalDialog(
+            currentInterval = currentSyncInterval,
+            onDismiss = { showSyncIntervalDialog = false },
+            onIntervalSelected = { interval ->
+                syncManager.setSyncInterval(interval)
+                showSyncIntervalDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun SyncIntervalDialog(
+    currentInterval: SyncManager.SyncInterval,
+    onDismiss: () -> Unit,
+    onIntervalSelected: (SyncManager.SyncInterval) -> Unit
+) {
+    val intervals = SyncManager.SyncInterval.values()
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Sync Interval") },
+        text = {
+            Column {
+                Text(
+                    text = "Choose how often to automatically sync wallet data:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                for (interval in intervals) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onIntervalSelected(interval) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = currentInterval == interval,
+                            onClick = { onIntervalSelected(interval) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = interval.displayName,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done")
+            }
+        }
+    )
+}
+
+@Composable
+fun CurrencySelectionDialog(
+    currentMode: CurrencyDisplayMode,
+    onDismiss: () -> Unit,
+    onModeSelected: (CurrencyDisplayMode) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Display Currency") },
+        text = {
+            Column {
+                Text(
+                    text = "Choose how to display transaction amounts:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                CurrencyDisplayMode.values().forEach { mode ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onModeSelected(mode) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = currentMode == mode,
+                            onClick = { onModeSelected(mode) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = when (mode) {
+                                    CurrencyDisplayMode.USD -> "USD ($)"
+                                    CurrencyDisplayMode.SOL -> "SOL (◎)"
+                                },
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = when (mode) {
+                                    CurrencyDisplayMode.USD -> "Show amounts in US Dollars"
+                                    CurrencyDisplayMode.SOL -> "Show amounts in SOL tokens"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done")
+            }
+        }
+    )
 }
 
 @Composable

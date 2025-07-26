@@ -7,7 +7,10 @@ import com.solana.solmind.data.model.LedgerEntry
 import com.solana.solmind.data.model.TransactionCategory
 import com.solana.solmind.data.model.TransactionType
 import com.solana.solmind.data.preferences.AccountModeManager
+import com.solana.solmind.data.manager.CurrencyPreferenceManager
+import com.solana.solmind.data.manager.CurrencyDisplayMode
 import com.solana.solmind.repository.LedgerRepository
+import com.solana.solmind.utils.CurrencyFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,6 +56,7 @@ data class ChatMessage(
 class AddEntryViewModel @Inject constructor(
     private val repository: LedgerRepository,
     private val accountModeManager: AccountModeManager,
+    private val currencyPreferenceManager: CurrencyPreferenceManager,
     private val aiService: com.solana.solmind.service.AIService,
     private val chatbotService: com.solana.solmind.service.ChatbotService
 ) : ViewModel() {
@@ -64,6 +68,7 @@ class AddEntryViewModel @Inject constructor(
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
     val currentAccountMode = accountModeManager.currentAccountMode
+    val currencyDisplayMode = currencyPreferenceManager.currencyDisplayMode
     
     fun updateAmount(amount: String) {
         val error = validateAmount(amount)
@@ -412,7 +417,9 @@ class AddEntryViewModel @Inject constructor(
                     )
                     
                     // Generate contextual response about the transaction
-                    val transactionContext = "I found a transaction: ${suggestion.description} for $${suggestion.amount} in ${suggestion.category.getDisplayName()} category."
+                    val currentCurrencyMode = currencyPreferenceManager.getCurrencyDisplayMode()
+                    val currentAccountMode = accountModeManager.getCurrentAccountMode()
+                    val transactionContext = "I found a transaction: ${suggestion.description} for ${CurrencyFormatter.formatAmount(suggestion.amount, currentCurrencyMode, currentAccountMode)} in ${suggestion.category.getDisplayName()} category."
                     chatbotService.generateResponse("$message\n\nContext: $transactionContext")
                 } else {
                     // Generate conversational response using the chatbot
@@ -468,8 +475,10 @@ class AddEntryViewModel @Inject constructor(
                     confidence = mockTransaction.confidence
                 )
                 
+                val currentCurrencyMode = currencyPreferenceManager.getCurrencyDisplayMode()
+                val currentAccountMode = accountModeManager.getCurrentAccountMode()
                 val aiResponse = "I've analyzed your receipt! I found:\n\n" +
-                "💰 Amount: $${mockTransaction.amount}\n" +
+                "💰 Amount: ${CurrencyFormatter.formatAmount(mockTransaction.amount, currentCurrencyMode, currentAccountMode)}\n" +
                 "📝 Description: ${mockTransaction.description}\n" +
                 "📊 Type: ${mockTransaction.type.name.lowercase().capitalize()}\n" +
                 "🏷️ Category: ${mockTransaction.category.getDisplayName()}\n\n" +

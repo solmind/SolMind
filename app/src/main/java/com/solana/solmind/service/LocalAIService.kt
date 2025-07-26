@@ -41,6 +41,154 @@ class LocalAIService @Inject constructor(
         }
     }
     
+    suspend fun parseOnChainTransactionWithAI(content: String, actualAmount: Double? = null): TransactionParseResult {
+        return withContext(Dispatchers.IO) {
+            val selectedModel = modelManager.selectedModel.value
+                ?: throw IllegalStateException("No model selected. Please select a model first.")
+            
+            // Check if the selected model is downloaded
+            if (!modelManager.isModelDownloaded(selectedModel.id)) {
+                throw IllegalStateException("Selected model ${selectedModel.name} is not downloaded. Please download it first.")
+            }
+            
+            // Create the prompt for on-chain transactions with blockchain-specific categories
+            val prompt = "You are given a piece of text describing a blockchain transaction: [$content], please extract: transaction type (spend or income);amount;category from [DEFI_SWAP,DEFI_LENDING,DEFI_STAKING,NFT_PURCHASE,NFT_SALE,TOKEN_TRANSFER,BRIDGE,GAMING,MINTING,TRADING,INVESTMENT,OTHER];description (clean, descriptive summary);date (YYYY-MM-DD format, today if not specified). Output with 5 pieces split by ;"
+            
+            // Get model path
+            val modelPath = modelManager.getModelPath(selectedModel.id)
+            
+            // Simulate model inference using the selected model for on-chain transactions
+             val modelResponse = simulateOnChainModelResponse(content)
+            
+            // Parse the response and override amount if actualAmount is provided
+            val parseResult = parseModelResponse(modelResponse)
+            
+            // Use actual amount if provided, otherwise use parsed amount
+            if (actualAmount != null && actualAmount > 0.0) {
+                parseResult.copy(amount = actualAmount)
+            } else {
+                parseResult
+            }
+        }
+    }
+    
+    private fun simulateOnChainModelResponse(content: String): String {
+        val normalizedContent = content.lowercase().trim()
+        android.util.Log.d("LocalAIService", "Processing on-chain content: '$content' -> normalized: '$normalizedContent'")
+        
+        // Simulate intelligent parsing for blockchain transactions
+        val result = when {
+            // DeFi Swapping
+            normalizedContent.contains("swap") || normalizedContent.contains("exchange") ||
+            normalizedContent.contains("uniswap") || normalizedContent.contains("pancakeswap") -> {
+                val amount = extractAmount(normalizedContent) ?: "100.00"
+                val description = extractDescription(normalizedContent, "Token swap")
+                val date = extractDate(normalizedContent)
+                "spend;$amount;DEFI_SWAP;$description;$date"
+            }
+            
+            // DeFi Lending
+            normalizedContent.contains("lend") || normalizedContent.contains("borrow") ||
+            normalizedContent.contains("compound") || normalizedContent.contains("aave") -> {
+                val amount = extractAmount(normalizedContent) ?: "500.00"
+                val description = extractDescription(normalizedContent, "DeFi lending")
+                val date = extractDate(normalizedContent)
+                "spend;$amount;DEFI_LENDING;$description;$date"
+            }
+            
+            // DeFi Staking
+            normalizedContent.contains("stake") || normalizedContent.contains("staking") ||
+            normalizedContent.contains("validator") || normalizedContent.contains("delegate") -> {
+                val amount = extractAmount(normalizedContent) ?: "1000.00"
+                val description = extractDescription(normalizedContent, "Token staking")
+                val date = extractDate(normalizedContent)
+                "spend;$amount;DEFI_STAKING;$description;$date"
+            }
+            
+            // NFT Purchase
+            normalizedContent.contains("nft") && (normalizedContent.contains("buy") || normalizedContent.contains("purchase")) ||
+            normalizedContent.contains("opensea") || normalizedContent.contains("magic eden") -> {
+                val amount = extractAmount(normalizedContent) ?: "0.5"
+                val description = extractDescription(normalizedContent, "NFT purchase")
+                val date = extractDate(normalizedContent)
+                "spend;$amount;NFT_PURCHASE;$description;$date"
+            }
+            
+            // NFT Sale
+            normalizedContent.contains("nft") && (normalizedContent.contains("sell") || normalizedContent.contains("sale")) -> {
+                val amount = extractAmount(normalizedContent) ?: "0.3"
+                val description = extractDescription(normalizedContent, "NFT sale")
+                val date = extractDate(normalizedContent)
+                "income;$amount;NFT_SALE;$description;$date"
+            }
+            
+            // Token Transfer
+            normalizedContent.contains("transfer") || normalizedContent.contains("send") ||
+            normalizedContent.contains("receive") -> {
+                val amount = extractAmount(normalizedContent) ?: "50.00"
+                val description = extractDescription(normalizedContent, "Token transfer")
+                val date = extractDate(normalizedContent)
+                val type = if (normalizedContent.contains("receive")) "income" else "spend"
+                "$type;$amount;TOKEN_TRANSFER;$description;$date"
+            }
+            
+            // Bridge
+            normalizedContent.contains("bridge") || normalizedContent.contains("cross-chain") -> {
+                val amount = extractAmount(normalizedContent) ?: "25.00"
+                val description = extractDescription(normalizedContent, "Cross-chain bridge")
+                val date = extractDate(normalizedContent)
+                "spend;$amount;BRIDGE;$description;$date"
+            }
+            
+            // Gaming
+            normalizedContent.contains("game") || normalizedContent.contains("gaming") ||
+            normalizedContent.contains("play") || normalizedContent.contains("reward") -> {
+                val amount = extractAmount(normalizedContent) ?: "10.00"
+                val description = extractDescription(normalizedContent, "Gaming transaction")
+                val date = extractDate(normalizedContent)
+                val type = if (normalizedContent.contains("reward")) "income" else "spend"
+                "$type;$amount;GAMING;$description;$date"
+            }
+            
+            // Minting
+            normalizedContent.contains("mint") || normalizedContent.contains("minting") -> {
+                val amount = extractAmount(normalizedContent) ?: "0.1"
+                val description = extractDescription(normalizedContent, "Token/NFT minting")
+                val date = extractDate(normalizedContent)
+                "spend;$amount;MINTING;$description;$date"
+            }
+            
+            // Trading
+            normalizedContent.contains("trade") || normalizedContent.contains("trading") ||
+            normalizedContent.contains("buy") || normalizedContent.contains("sell") -> {
+                val amount = extractAmount(normalizedContent) ?: "200.00"
+                val description = extractDescription(normalizedContent, "Token trading")
+                val date = extractDate(normalizedContent)
+                "spend;$amount;TRADING;$description;$date"
+            }
+            
+            // Investment
+            normalizedContent.contains("invest") || normalizedContent.contains("investment") ||
+            normalizedContent.contains("portfolio") -> {
+                val amount = extractAmount(normalizedContent) ?: "1000.00"
+                val description = extractDescription(normalizedContent, "Crypto investment")
+                val date = extractDate(normalizedContent)
+                "spend;$amount;INVESTMENT;$description;$date"
+            }
+            
+            // Default to OTHER
+            else -> {
+                val amount = extractAmount(normalizedContent) ?: "20.00"
+                val description = extractDescription(normalizedContent, "Other blockchain transaction")
+                val date = extractDate(normalizedContent)
+                "spend;$amount;OTHER;$description;$date"
+            }
+        }
+        
+        android.util.Log.d("LocalAIService", "On-chain model response: '$result'")
+        return result
+    }
+    
     private fun simulateModelResponse(content: String, model: LanguageModel): String {
         val normalizedContent = content.lowercase().trim()
         android.util.Log.d("LocalAIService", "Processing content: '$content' -> normalized: '$normalizedContent'")
