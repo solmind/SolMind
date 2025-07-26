@@ -4,6 +4,13 @@ An AI-powered expense tracking Android app built for the Solana Mobile Hackathon
 
 ## Recent Updates (Latest)
 
+### 🎯 Enhanced Transaction Experience & UI Improvements
+- **Smart Category Dropdown**: AI-powered category suggestions with custom input support
+- **Seamless Navigation**: Fixed navigation flow to keep users on chatbot interface after saving transactions
+- **Enhanced User Experience**: Streamlined transaction editing and saving process
+- **Custom Category Support**: Users can input custom categories with AI-powered suggestions
+- **Improved Conversation Flow**: Maintains chat context throughout transaction lifecycle
+
 ### 🚀 LiteRT Model Integration & UI Improvements
 - **Model Replacement**: Migrated from legacy models to LiteRT-compatible versions from `litert-community`
 - **Enhanced UI**: Fixed model list scrolling with LazyColumn implementation

@@ -491,3 +491,175 @@ class PyTorchInference @Inject constructor(
 - Persistent storage with DataStore
 - Enhanced user experience with smooth transitions
 - App ready for testing and deployment
+
+---
+
+# Enhanced Category Dropdown & Navigation Fix Session
+
+## Overview
+This session focused on implementing an enhanced category dropdown with AI-powered suggestions and fixing navigation issues that were interrupting the user experience in the chatbot interface.
+
+## Key Accomplishments
+
+### 🎯 Enhanced Category Dropdown Implementation
+**Objective**: Create a smart category selection system with custom input and AI suggestions.
+
+**Features Implemented**:
+1. **Custom Text Input**: Users can type custom category names
+2. **AI-Powered Suggestions**: Dynamic category suggestions based on user input
+3. **Fallback Logic**: Keyword-based suggestions when AI service is unavailable
+4. **Clear Button**: Easy input clearing functionality
+5. **Filtered Display**: Shows AI suggestions first, then existing categories
+
+**Technical Implementation**:
+- **AddEntryViewModel.kt**: Added `customCategoryInput` and `suggestedCategories` fields
+- **AddEntryScreen.kt**: Enhanced UI with custom input field and dropdown
+- **AI Integration**: `getCategorySuggestions()` method using AI service
+- **Fallback System**: Keyword-based category matching for offline scenarios
+
+### 🔧 Navigation Flow Fix
+**Problem**: App was automatically navigating to main overview page after saving transactions
+**Root Cause**: `LaunchedEffect(uiState.isSaved)` in AddEntryScreen was calling `navController.popBackStack()`
+
+**Solution**: Removed automatic navigation logic to keep users on chatbot interface
+
+**Files Modified**:
+- **AddEntryScreen.kt**: Removed `LaunchedEffect` that caused unwanted navigation
+- **AddEntryViewModel.kt**: Updated `saveEntry()` and `saveEditedTransaction()` functions
+
+### 🎨 UI/UX Enhancements
+
+**Category Dropdown Features**:
+```kotlin
+// Enhanced category selection with custom input
+OutlinedTextField(
+    value = uiState.customCategoryInput,
+    onValueChange = onCustomCategoryInputChange,
+    label = { Text("Category") },
+    trailingIcon = {
+        Row {
+            if (uiState.customCategoryInput.isNotEmpty()) {
+                IconButton(onClick = { onCustomCategoryInputChange("") }) {
+                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                }
+            }
+            IconButton(onClick = { expanded = !expanded }) {
+                Icon(
+                    if (expanded) Icons.Default.KeyboardArrowUp 
+                    else Icons.Default.KeyboardArrowDown,
+                    contentDescription = "Toggle dropdown"
+                )
+            }
+        }
+    }
+)
+```
+
+**AI Suggestion Logic**:
+```kotlin
+fun getCategorySuggestions(input: String): List<TransactionCategory> {
+    return try {
+        // AI-powered suggestions using chatbot service
+        val suggestions = chatbotService.generateCategorySuggestions(input)
+        suggestions.take(3) // Limit to top 3 suggestions
+    } catch (e: Exception) {
+        // Fallback to keyword-based matching
+        getKeywordBasedSuggestions(input)
+    }
+}
+```
+
+### 🚀 User Experience Improvements
+
+**Before**:
+- Limited to predefined categories
+- Users navigated away from chat after saving
+- Interrupted conversation flow
+
+**After**:
+- Custom category input with AI suggestions
+- Users stay on chatbot interface after saving
+- Seamless conversation experience
+- Enhanced transaction editing workflow
+
+## Technical Details
+
+### ViewModel Enhancements
+**New State Fields**:
+- `customCategoryInput: String` - Tracks user's custom category input
+- `suggestedCategories: List<TransactionCategory>` - AI-generated suggestions
+
+**New Methods**:
+- `updateCustomCategoryInput(input: String)` - Updates custom input and triggers suggestions
+- `getCategorySuggestions(input: String)` - Generates AI-powered category suggestions
+- `getKeywordBasedSuggestions(input: String)` - Fallback suggestion logic
+
+### UI State Management
+**Enhanced Transaction Flow**:
+1. User inputs transaction details in chat
+2. AI extracts transaction information
+3. User can edit with enhanced category dropdown
+4. Custom categories supported with AI suggestions
+5. Save directly without navigation interruption
+6. User remains in chat context
+
+### Error Handling
+- Graceful fallback when AI service unavailable
+- Keyword-based suggestions as backup
+- Robust input validation
+- Clear error messaging
+
+## Build & Deployment
+
+### Build Process
+```bash
+./gradlew assembleDebug  # Successful build
+adb install -r app/build/outputs/apk/debug/app-debug.apk  # Installation
+adb shell am start -n com.solana.solmind/.MainActivity  # Launch
+```
+
+### Verification
+- ✅ Enhanced category dropdown working correctly
+- ✅ AI suggestions functioning properly
+- ✅ Custom category input supported
+- ✅ Navigation stays on chatbot interface
+- ✅ Transaction saving workflow streamlined
+- ✅ No compilation errors or warnings
+
+## Files Modified
+
+### Core Implementation
+1. **AddEntryViewModel.kt**
+   - Added custom category input state management
+   - Implemented AI-powered suggestion system
+   - Enhanced transaction saving logic
+
+2. **AddEntryScreen.kt**
+   - Enhanced category dropdown UI
+   - Added custom input field with clear button
+   - Removed automatic navigation logic
+   - Improved user interaction flow
+
+### Documentation
+3. **README.md**
+   - Updated recent updates section
+   - Added enhanced transaction experience features
+   - Documented new UI improvements
+
+## Session Results
+✅ **ENHANCED CATEGORY SYSTEM COMPLETE**
+- Smart category dropdown with AI suggestions implemented
+- Custom category input fully functional
+- Navigation flow fixed to maintain chat context
+- Seamless user experience achieved
+- Enhanced transaction editing workflow
+- App ready for production use
+
+✅ **USER EXPERIENCE OPTIMIZED**
+- Users stay engaged in chatbot interface
+- Conversation context maintained throughout transaction lifecycle
+- Intuitive category selection with AI assistance
+- Streamlined save process without interruptions
+
+**Session Status**: ✅ Complete  
+**Next Steps**: Ready for user testing and feedback on enhanced category features
