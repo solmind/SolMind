@@ -30,6 +30,9 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -60,6 +63,8 @@ import com.solana.solmind.data.manager.CurrencyDisplayMode
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import com.solana.solmind.service.SubscriptionManager
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -69,11 +74,14 @@ fun AddEntryScreen(
 ) {
     val context = LocalContext.current
     val currencyPreferenceManager = remember { CurrencyPreferenceManager(context) }
+    val subscriptionManager = remember { SubscriptionManager(context) }
     val currencyDisplayMode by currencyPreferenceManager.currencyDisplayMode.collectAsState(initial = CurrencyDisplayMode.SOL)
     
     val uiState by viewModel.uiState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val currentAccountMode by viewModel.currentAccountMode.collectAsState()
+    
+    var showUpgradeDialog by remember { mutableStateOf(false) }
     
     // Removed automatic navigation on save to keep user on chatbot interface
     
@@ -135,11 +143,23 @@ fun AddEntryScreen(
                 onSendMessage = { message -> viewModel.sendMessage(message) },
                 onSelectImage = { viewModel.selectImage() },
                 onTestFlanT5 = { testMessage -> viewModel.parseWithFlanT5(testMessage) },
+                onUpgradeClicked = { showUpgradeDialog = true },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
             )
         }
+    }
+    
+    // Upgrade Dialog
+    if (showUpgradeDialog) {
+        UpgradeDialog(
+            onDismiss = { showUpgradeDialog = false },
+            onUpgrade = {
+                subscriptionManager.upgradeToMaster()
+                showUpgradeDialog = false
+            }
+        )
     }
 }
 
@@ -150,6 +170,7 @@ fun ChatInterface(
     onSendMessage: (String) -> Unit,
     onSelectImage: () -> Unit,
     onTestFlanT5: ((String) -> Unit)? = null,
+    onUpgradeClicked: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var messageText by remember { mutableStateOf("") }
@@ -160,7 +181,10 @@ fun ChatInterface(
     ) {
         // Welcome message if no chat messages
         if (chatMessages.isEmpty()) {
-            WelcomeMessage(onTestFlanT5 = onTestFlanT5)
+            WelcomeMessage(
+                onTestFlanT5 = onTestFlanT5,
+                onUpgradeClicked = onUpgradeClicked
+            )
         }
         
         // Chat messages
@@ -254,7 +278,8 @@ fun ChatInterface(
 
 @Composable
 fun WelcomeMessage(
-    onTestFlanT5: ((String) -> Unit)? = null
+    onTestFlanT5: ((String) -> Unit)? = null,
+    onUpgradeClicked: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier
@@ -299,7 +324,7 @@ fun WelcomeMessage(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // Test buttons for FLAN-T5 model
+                // Agent Mode Selection
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -311,23 +336,54 @@ fun WelcomeMessage(
                             containerColor = MaterialTheme.colorScheme.secondary
                         )
                     ) {
-                        Text(
-                            text = "Test: Coffee",
-                            style = MaterialTheme.typography.labelSmall
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Transaction Parser",
+                                style = MaterialTheme.typography.labelSmall,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                     
                     Button(
-                        onClick = { onTestFlanT5("Received salary payment of $3000") },
+                        onClick = { onUpgradeClicked?.invoke() },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary
+                            containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.7f)
                         )
                     ) {
-                        Text(
-                            text = "Test: Salary",
-                            style = MaterialTheme.typography.labelSmall
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.TrendingUp,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "COMING",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Text(
+                                text = "Finance Advisor",
+                                style = MaterialTheme.typography.labelSmall,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }
