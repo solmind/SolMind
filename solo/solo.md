@@ -663,3 +663,211 @@ adb shell am start -n com.solana.solmind/.MainActivity  # Launch
 
 **Session Status**: ✅ Complete  
 **Next Steps**: Ready for user testing and feedback on enhanced category features
+
+---
+
+# Currency Preference System & Account Mode Integration Session
+
+## Overview
+This session implemented a comprehensive currency preference system that allows users to choose between USD and SOL display modes, with intelligent account mode integration ensuring offchain transactions always use USD while onchain transactions respect user preferences.
+
+## Key Accomplishments
+
+### 💰 Currency Preference Management System
+**Objective**: Create a robust currency preference system with account mode awareness.
+
+**Core Features Implemented**:
+1. **Dual Currency Support**: Professional USD ($) and SOL (◎) formatting
+2. **Account Mode Integration**: Offchain mode enforces USD, onchain mode allows user choice
+3. **Persistent Storage**: DataStore-based preference persistence
+4. **Real-time Updates**: Reactive UI updates across all screens
+5. **Context-Aware Settings**: Currency options only visible in appropriate modes
+
+### 🏗️ Architecture Implementation
+
+**New Components Created**:
+
+#### CurrencyPreferenceManager.kt
+```kotlin
+@Singleton
+class CurrencyPreferenceManager @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+    val currencyDisplayMode: Flow<CurrencyDisplayMode>
+    suspend fun setCurrencyDisplayMode(mode: CurrencyDisplayMode)
+    suspend fun getCurrencyDisplayMode(): CurrencyDisplayMode
+}
+
+enum class CurrencyDisplayMode { USD, SOL }
+```
+
+#### CurrencyFormatter.kt
+```kotlin
+object CurrencyFormatter {
+    fun formatAmount(amount: Double, mode: CurrencyDisplayMode, accountMode: AccountMode): String
+    fun formatTransactionAmount(amount: Double, isIncome: Boolean, mode: CurrencyDisplayMode, accountMode: AccountMode): String
+}
+```
+
+### 🔧 Application-Wide Integration
+
+**Files Modified for Currency Support**:
+
+1. **HomeScreen.kt**
+   - Added currency preference collection
+   - Updated balance, income, and expense formatting
+   - Integrated account mode into TransactionItem
+
+2. **AddEntryViewModel.kt**
+   - Added currency formatting in AI message processing
+   - Integrated account mode into amount formatting
+
+3. **AddEntryScreen.kt**
+   - Updated TransactionPreviewScreen with account mode
+   - Enhanced currency display in transaction preview
+
+4. **SettingsScreen.kt**
+   - Added currency preference setting (onchain mode only)
+   - Implemented currency selection dialog
+   - Context-aware UI based on account mode
+
+### 🎯 Smart Currency Logic
+
+**Account Mode Behavior**:
+- **Onchain Mode**: Users can choose USD or SOL display
+- **Offchain Mode**: Always displays USD (SOL option hidden)
+
+**Implementation Logic**:
+```kotlin
+fun formatAmount(amount: Double, mode: CurrencyDisplayMode, accountMode: AccountMode): String {
+    return when {
+        accountMode == AccountMode.OFFCHAIN -> usdFormatter.format(amount)
+        mode == CurrencyDisplayMode.USD -> usdFormatter.format(amount)
+        mode == CurrencyDisplayMode.SOL -> "${solFormatter.format(amount)} SOL"
+        else -> usdFormatter.format(amount)
+    }
+}
+```
+
+### 🎨 User Interface Enhancements
+
+**Settings Integration**:
+- Currency preference section only appears in onchain mode
+- Professional currency selection dialog
+- Real-time preference updates
+- Intuitive currency symbols and descriptions
+
+**Currency Selection Dialog**:
+```kotlin
+@Composable
+fun CurrencySelectionDialog(
+    currentMode: CurrencyDisplayMode,
+    onDismiss: () -> Unit,
+    onModeSelected: (CurrencyDisplayMode) -> Unit
+) {
+    // Radio button selection for USD ($) and SOL (◎)
+    // Professional descriptions and formatting
+}
+```
+
+### 📱 Cross-Screen Consistency
+
+**Universal Currency Display**:
+- Home screen balance and transaction amounts
+- Add entry screen transaction preview
+- Settings screen preference display
+- All formatting respects account mode
+
+**Real-time Updates**:
+- Instant UI refresh when preferences change
+- Seamless switching between currency modes
+- Consistent formatting across all components
+
+## Technical Implementation Details
+
+### Data Persistence
+**DataStore Integration**:
+```kotlin
+val Context.currencyDataStore: DataStore<Preferences> by preferencesDataStore(name = "currency_preferences")
+
+private val currencyDisplayKey = stringPreferencesKey("currency_display_mode")
+```
+
+### Dependency Injection
+**Hilt Integration**:
+- CurrencyPreferenceManager as Singleton
+- Proper context injection
+- Seamless integration with existing DI structure
+
+### Error Handling
+- Graceful fallback to default currency modes
+- Robust preference loading and saving
+- Proper exception handling in formatting functions
+
+## Build & Deployment
+
+### Build Process
+```bash
+./gradlew assembleDebug  # Successful build
+./gradlew installDebug   # Successful installation
+```
+
+### Verification Results
+- ✅ Currency preferences persist across app restarts
+- ✅ Offchain mode always shows USD
+- ✅ Onchain mode respects user currency choice
+- ✅ Settings UI adapts to account mode
+- ✅ All screens display consistent currency formatting
+- ✅ Real-time updates work seamlessly
+
+## Files Created/Modified
+
+### New Files
+1. **CurrencyPreferenceManager.kt** - Core preference management
+2. **CurrencyFormatter.kt** - Professional currency formatting
+
+### Modified Files
+1. **HomeScreen.kt** - Currency display integration
+2. **AddEntryViewModel.kt** - Currency formatting in AI processing
+3. **AddEntryScreen.kt** - Transaction preview currency support
+4. **SettingsScreen.kt** - Currency preference UI
+5. **README.md** - Documentation updates
+
+### Import Path Corrections
+- Fixed import paths from `data.preferences` to `data.manager`
+- Updated all currency-related imports across the codebase
+- Ensured consistent package structure
+
+## User Experience Impact
+
+### Before Implementation
+- No currency preference options
+- Inconsistent currency display
+- No account mode awareness
+
+### After Implementation
+- ✅ Professional USD and SOL formatting
+- ✅ Smart account mode integration
+- ✅ Persistent user preferences
+- ✅ Context-aware settings UI
+- ✅ Real-time currency switching
+- ✅ Consistent cross-screen experience
+
+## Session Results
+✅ **CURRENCY PREFERENCE SYSTEM COMPLETE**
+- Comprehensive currency management implemented
+- Account mode integration working perfectly
+- Professional formatting for USD and SOL
+- Persistent preferences with DataStore
+- Context-aware UI based on account mode
+- Universal application across all screens
+
+✅ **USER EXPERIENCE ENHANCED**
+- Intuitive currency preference selection
+- Smart defaults based on account mode
+- Seamless real-time updates
+- Professional currency symbol display
+- Consistent formatting throughout app
+
+**Session Status**: ✅ Complete  
+**Next Steps**: Ready for user testing of currency preference functionality and potential expansion to additional currencies

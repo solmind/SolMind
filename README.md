@@ -4,6 +4,15 @@ An AI-powered expense tracking Android app built for the Solana Mobile Hackathon
 
 ## Recent Updates (Latest)
 
+### 💰 Currency Preference System & Account Mode Integration
+- **Smart Currency Display**: Comprehensive currency preference system with USD and SOL support
+- **Account Mode Awareness**: Offchain mode always uses USD, onchain mode allows user preference
+- **Persistent Preferences**: Currency settings saved using DataStore for seamless user experience
+- **Context-Aware Settings**: Currency preference option only appears in onchain mode
+- **Universal Integration**: Currency formatting applied across all screens (Home, Add Entry, Settings)
+- **Real-time Updates**: Instant UI updates when switching currency preferences
+- **Professional Formatting**: Proper currency symbols and formatting for both USD ($) and SOL (◎)
+
 ### 🎯 Enhanced Transaction Experience & UI Improvements
 - **Smart Category Dropdown**: AI-powered category suggestions with custom input support
 - **Seamless Navigation**: Fixed navigation flow to keep users on chatbot interface after saving transactions
@@ -128,6 +137,20 @@ app/src/main/java/com/solana/ailedger/
 - **Optimized Edge Models**: Support for TinyLlama, Gemma3, Phi-4 Mini, and SmolLM models
 - **Cloud AI Integration**: SolMind Cloud AI model access for premium users
 - **Smart Caching**: Efficient model size caching to reduce API calls
+
+### Currency Preference Manager (`CurrencyPreferenceManager.kt`)
+- **Currency Display Management**: Handle user preferences for USD vs SOL display
+- **DataStore Integration**: Persistent storage of currency preferences using Android DataStore
+- **Account Mode Integration**: Automatic USD enforcement for offchain mode
+- **Real-time Updates**: Flow-based reactive currency preference updates
+- **Suspend Functions**: Async currency preference retrieval for ViewModels
+
+### Currency Formatter (`CurrencyFormatter.kt`)
+- **Dual Currency Support**: Professional formatting for both USD ($) and SOL (◎) currencies
+- **Account Mode Awareness**: Automatically enforces USD formatting for offchain transactions
+- **Flexible Formatting**: Supports both regular amounts and transaction-specific formatting
+- **Consistent Display**: Ensures uniform currency presentation across the entire app
+- **Precision Handling**: Proper decimal places for USD (2) and SOL (4) currencies
 
 ### Subscription Manager (`SubscriptionManager.kt`)
 - SolMind Master subscription tier management
