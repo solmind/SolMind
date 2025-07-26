@@ -4,33 +4,43 @@ package com.solana.solmind.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
-
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -43,10 +53,6 @@ import com.solana.solmind.ui.viewmodel.ChatMessage
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.Locale
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.ExperimentalComposeUiApi
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -57,11 +63,7 @@ fun AddEntryScreen(
     val uiState by viewModel.uiState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     
-    LaunchedEffect(uiState.isSaved) {
-        if (uiState.isSaved) {
-            navController.popBackStack()
-        }
-    }
+    // Removed automatic navigation on save to keep user on chatbot interface
     
     Scaffold(
         topBar = {
@@ -85,7 +87,23 @@ fun AddEntryScreen(
             )
         }
     ) { paddingValues ->
-        if (uiState.showPreview) {
+        if (uiState.showEditForm) {
+            TransactionEditScreen(
+                uiState = uiState,
+                isLoading = isLoading,
+                onAmountChange = { viewModel.updateAmount(it) },
+                onDescriptionChange = { viewModel.updateDescription(it) },
+                onTypeChange = { viewModel.updateTransactionType(it) },
+                onCategoryChange = { viewModel.updateCategory(it) },
+                onCustomCategoryInputChange = { viewModel.updateCustomCategoryInput(it) },
+                onDateChange = { viewModel.updateDate(it) },
+                onSave = { viewModel.saveEditedTransaction() },
+                onCancel = { viewModel.cancelEdit() },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            )
+        } else if (uiState.showPreview) {
             TransactionPreviewScreen(
                 uiState = uiState,
                 isLoading = isLoading,
@@ -599,15 +617,15 @@ fun TransactionPreviewScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.weight(1f))
-        
-        // Action buttons
+                 }
+             }
+         }
+         
+         // Action buttons
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             OutlinedButton(
@@ -637,6 +655,397 @@ fun TransactionPreviewScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Confirm")
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TransactionEditScreen(
+    uiState: AddEntryUiState,
+    isLoading: Boolean,
+    onAmountChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onTypeChange: (TransactionType) -> Unit,
+    onCategoryChange: (TransactionCategory) -> Unit,
+    onCustomCategoryInputChange: (String) -> Unit,
+    onDateChange: (Date) -> Unit,
+    onSave: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showCategoryDropdown by remember { mutableStateOf(false) }
+    
+    Column(
+        modifier = modifier
+    ) {
+        LazyColumn(
+             modifier = Modifier
+                 .weight(1f)
+                 .padding(16.dp),
+             verticalArrangement = Arrangement.spacedBy(16.dp)
+         ) {
+            item {
+                // Header
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Edit Transaction",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Modify the transaction details",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+            }
+            
+            item {
+                // Form fields
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                // Amount field
+                OutlinedTextField(
+                    value = uiState.amount,
+                    onValueChange = onAmountChange,
+                    label = { Text("Amount") },
+                    leadingIcon = {
+                        Icon(Icons.Default.AttachMoney, contentDescription = null)
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = ImeAction.Next
+                    ),
+                    isError = uiState.amountError != null,
+                    supportingText = uiState.amountError?.let { { Text(it) } },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                // Description field
+                OutlinedTextField(
+                    value = uiState.description,
+                    onValueChange = onDescriptionChange,
+                    label = { Text("Description") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Description, contentDescription = null)
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Next
+                    ),
+                    isError = uiState.descriptionError != null,
+                    supportingText = uiState.descriptionError?.let { { Text(it) } },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3
+                )
+                
+                // Transaction Type
+                Column {
+                    Text(
+                        text = "Transaction Type",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        TransactionType.values().forEach { type ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clickable { onTypeChange(type) }
+                                    .weight(1f)
+                            ) {
+                                RadioButton(
+                                    selected = uiState.transactionType == type,
+                                    onClick = { onTypeChange(type) }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = type.name.lowercase().capitalize(),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // Category selection with AI suggestions
+                Column {
+                    Text(
+                        text = "Category",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    Box {
+                        OutlinedTextField(
+                            value = uiState.customCategoryInput.ifEmpty { "${uiState.category.getEmoji()} ${uiState.category.getDisplayName()}" },
+                            onValueChange = { input ->
+                                onCustomCategoryInputChange(input)
+                                showCategoryDropdown = input.isNotEmpty()
+                            },
+                            label = { Text("Type to search or select category") },
+                            trailingIcon = {
+                                Row {
+                                    if (uiState.customCategoryInput.isNotEmpty()) {
+                                        IconButton(
+                                            onClick = {
+                                                onCustomCategoryInputChange("")
+                                                showCategoryDropdown = false
+                                            }
+                                        ) {
+                                            Icon(Icons.Default.Close, contentDescription = "Clear")
+                                        }
+                                    }
+                                    Icon(
+                                        if (showCategoryDropdown) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                        contentDescription = null,
+                                        modifier = Modifier.clickable {
+                                            showCategoryDropdown = !showCategoryDropdown
+                                        }
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Done
+                            )
+                        )
+                        
+                        DropdownMenu(
+                            expanded = showCategoryDropdown,
+                            onDismissRequest = { showCategoryDropdown = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            // Show AI suggested categories first if available
+                            if (uiState.suggestedCategories.isNotEmpty() && uiState.customCategoryInput.isNotEmpty()) {
+                                Text(
+                                    text = "🤖 AI Suggestions",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                )
+                                
+                                uiState.suggestedCategories.forEach { category ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "✨",
+                                                    style = MaterialTheme.typography.titleMedium
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    text = category.getEmoji(),
+                                                    style = MaterialTheme.typography.titleMedium
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = category.getDisplayName(),
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        },
+                                        onClick = {
+                                            onCategoryChange(category)
+                                            onCustomCategoryInputChange("")
+                                            showCategoryDropdown = false
+                                        }
+                                    )
+                                }
+                                
+                                Divider(modifier = Modifier.padding(vertical = 4.dp))
+                            }
+                            
+                            // Show all categories
+                            if (uiState.customCategoryInput.isEmpty()) {
+                                Text(
+                                    text = "All Categories",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                )
+                            }
+                            
+                            TransactionCategory.values().forEach { category ->
+                                // Filter categories based on input if there's custom input
+                                val shouldShow = uiState.customCategoryInput.isEmpty() || 
+                                    category.getDisplayName().contains(uiState.customCategoryInput, ignoreCase = true) ||
+                                    uiState.suggestedCategories.contains(category)
+                                
+                                if (shouldShow) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = category.getEmoji(),
+                                                    style = MaterialTheme.typography.titleMedium
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = category.getDisplayName(),
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
+                                        },
+                                        onClick = {
+                                            onCategoryChange(category)
+                                            onCustomCategoryInputChange("")
+                                            showCategoryDropdown = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Date selection
+                Column {
+                    Text(
+                        text = "Date",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    OutlinedTextField(
+                        value = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(uiState.date),
+                        onValueChange = { },
+                        readOnly = true,
+                        leadingIcon = {
+                            Icon(Icons.Default.DateRange, contentDescription = null)
+                        },
+                        trailingIcon = {
+                            Icon(Icons.Default.Edit, contentDescription = null)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showDatePicker = true }
+                    )
+                }
+                
+                // AI Confidence display (if available)
+                if (uiState.confidence > 0f) {
+                    Column {
+                        Text(
+                            text = "AI Confidence",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = uiState.confidence,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${(uiState.confidence * 100).toInt()}% confident",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                    }
+                }
+            }
+        }
+         
+         // Action buttons
+         Row(
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .padding(16.dp),
+             horizontalArrangement = Arrangement.spacedBy(12.dp)
+         ) {
+            OutlinedButton(
+                onClick = onCancel,
+                modifier = Modifier.weight(1f),
+                enabled = !isLoading
+            ) {
+                Icon(Icons.Default.Close, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Cancel")
+            }
+            
+            Button(
+                onClick = onSave,
+                modifier = Modifier.weight(1f),
+                enabled = !isLoading && uiState.isValid
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Icon(Icons.Default.Check, contentDescription = null)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Save Changes")
+            }
+        }
+    }
+    
+    // Date picker dialog
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = uiState.date.time
+        )
+        
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            onDateChange(Date(millis))
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDatePicker = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 }

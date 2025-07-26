@@ -21,6 +21,8 @@ data class AddEntryUiState(
     val description: String = "",
     val transactionType: TransactionType = TransactionType.EXPENSE,
     val category: TransactionCategory = TransactionCategory.OTHER,
+    val customCategoryInput: String = "",
+    val suggestedCategories: List<TransactionCategory> = emptyList(),
     val date: Date = Date(),
     val confidence: Float = 0f,
     val amountError: String? = null,
@@ -29,6 +31,7 @@ data class AddEntryUiState(
     val isSaved: Boolean = false,
     val chatMessages: List<ChatMessage> = emptyList(),
     val showPreview: Boolean = false,
+    val showEditForm: Boolean = false,
     val isProcessingMessage: Boolean = false
 ) {
     val isValid: Boolean
@@ -84,6 +87,145 @@ class AddEntryViewModel @Inject constructor(
     
     fun updateCategory(category: TransactionCategory) {
         _uiState.value = _uiState.value.copy(category = category)
+    }
+    
+    fun updateCustomCategoryInput(input: String) {
+        _uiState.value = _uiState.value.copy(customCategoryInput = input)
+        
+        // Get AI suggestions for categories based on input
+        if (input.isNotEmpty()) {
+            getCategorySuggestions(input)
+        } else {
+            _uiState.value = _uiState.value.copy(suggestedCategories = emptyList())
+        }
+    }
+    
+    /**
+     * Get AI-powered category suggestions based on user input
+     * Uses the same AI service as the chatbox for consistent suggestions
+     */
+    private fun getCategorySuggestions(input: String) {
+        viewModelScope.launch {
+            try {
+                // Use AI service to categorize the input
+                val prediction = aiService.categorizeTransaction(input)
+                
+                // Create a list of suggested categories based on AI analysis
+                val suggestions = mutableListOf<TransactionCategory>()
+                
+                // Add the primary AI suggestion
+                suggestions.add(prediction.category)
+                
+                // Add related categories based on keywords
+                val relatedCategories = getRelatedCategories(input, prediction.category)
+                suggestions.addAll(relatedCategories)
+                
+                // Remove duplicates and limit to 5 suggestions
+                val uniqueSuggestions = suggestions.distinct().take(5)
+                
+                _uiState.value = _uiState.value.copy(suggestedCategories = uniqueSuggestions)
+                
+            } catch (e: Exception) {
+                // Fallback to keyword-based suggestions
+                val fallbackSuggestions = getKeywordBasedSuggestions(input)
+                _uiState.value = _uiState.value.copy(suggestedCategories = fallbackSuggestions)
+            }
+        }
+    }
+    
+    /**
+     * Get related categories based on the primary suggestion and input text
+     */
+    private fun getRelatedCategories(input: String, primaryCategory: TransactionCategory): List<TransactionCategory> {
+        val normalizedInput = input.lowercase().trim()
+        val related = mutableListOf<TransactionCategory>()
+        
+        // Add categories that might be related to the input
+        when (primaryCategory) {
+            TransactionCategory.FOOD_DINING -> {
+                if (normalizedInput.contains("grocery") || normalizedInput.contains("supermarket")) {
+                    related.add(TransactionCategory.SHOPPING)
+                }
+            }
+            TransactionCategory.SHOPPING -> {
+                if (normalizedInput.contains("food") || normalizedInput.contains("grocery")) {
+                    related.add(TransactionCategory.FOOD_DINING)
+                }
+                if (normalizedInput.contains("clothes") || normalizedInput.contains("fashion")) {
+                    related.add(TransactionCategory.OTHER)
+                }
+            }
+            TransactionCategory.TRANSPORTATION -> {
+                if (normalizedInput.contains("travel") || normalizedInput.contains("trip")) {
+                    related.add(TransactionCategory.TRAVEL)
+                }
+            }
+            TransactionCategory.ENTERTAINMENT -> {
+                if (normalizedInput.contains("subscription") || normalizedInput.contains("streaming")) {
+                    related.add(TransactionCategory.UTILITIES)
+                }
+            }
+            else -> {
+                // Add some common alternatives
+                related.addAll(listOf(
+                    TransactionCategory.OTHER,
+                    TransactionCategory.SHOPPING
+                ))
+            }
+        }
+        
+        return related.distinct()
+    }
+    
+    /**
+     * Fallback keyword-based category suggestions
+     */
+    private fun getKeywordBasedSuggestions(input: String): List<TransactionCategory> {
+        val normalizedInput = input.lowercase().trim()
+        val suggestions = mutableListOf<TransactionCategory>()
+        
+        // Food keywords
+        if (normalizedInput.contains("food") || normalizedInput.contains("restaurant") || 
+            normalizedInput.contains("coffee") || normalizedInput.contains("lunch")) {
+            suggestions.add(TransactionCategory.FOOD_DINING)
+        }
+        
+        // Transportation keywords
+        if (normalizedInput.contains("gas") || normalizedInput.contains("uber") || 
+            normalizedInput.contains("taxi") || normalizedInput.contains("bus")) {
+            suggestions.add(TransactionCategory.TRANSPORTATION)
+        }
+        
+        // Shopping keywords
+        if (normalizedInput.contains("buy") || normalizedInput.contains("purchase") || 
+            normalizedInput.contains("store") || normalizedInput.contains("shopping")) {
+            suggestions.add(TransactionCategory.SHOPPING)
+        }
+        
+        // Entertainment keywords
+        if (normalizedInput.contains("movie") || normalizedInput.contains("game") || 
+            normalizedInput.contains("entertainment") || normalizedInput.contains("netflix")) {
+            suggestions.add(TransactionCategory.ENTERTAINMENT)
+        }
+        
+        // Utilities keywords
+        if (normalizedInput.contains("bill") || normalizedInput.contains("electric") || 
+            normalizedInput.contains("internet") || normalizedInput.contains("phone")) {
+            suggestions.add(TransactionCategory.UTILITIES)
+        }
+        
+        // Healthcare keywords
+        if (normalizedInput.contains("doctor") || normalizedInput.contains("medicine") || 
+            normalizedInput.contains("hospital") || normalizedInput.contains("pharmacy")) {
+            suggestions.add(TransactionCategory.HEALTHCARE)
+        }
+        
+        // Add OTHER as fallback
+        if (suggestions.isEmpty()) {
+            suggestions.add(TransactionCategory.OTHER)
+        }
+        
+        return suggestions.distinct().take(5)
     }
     
     fun updateDate(date: Date) {
@@ -182,7 +324,11 @@ class AddEntryViewModel @Inject constructor(
                 )
                 
                 repository.insertEntry(entry)
-                _uiState.value = currentState.copy(isSaved = true)
+                _uiState.value = currentState.copy(
+                    isSaved = true,
+                    showPreview = false,
+                    showEditForm = false
+                )
                 
             } catch (e: Exception) {
                 _uiState.value = currentState.copy(
@@ -360,17 +506,31 @@ class AddEntryViewModel @Inject constructor(
     
     fun editTransaction() {
         _uiState.value = _uiState.value.copy(
-            showPreview = false
+            showPreview = false,
+            showEditForm = true
         )
-        
-        val assistantMessage = ChatMessage(
-            content = "Sure! What would you like to change about this transaction?",
-            isUser = false
+    }
+    
+    fun cancelEdit() {
+        _uiState.value = _uiState.value.copy(
+            showEditForm = false,
+            showPreview = true
         )
+    }
+    
+    fun saveEditedTransaction() {
         val currentState = _uiState.value
+        if (!currentState.isValid) {
+            return
+        }
         
+        // Directly save the transaction without showing preview again
+        saveEntry()
+        
+        // Reset to chat interface after saving
         _uiState.value = currentState.copy(
-            chatMessages = currentState.chatMessages + assistantMessage
+            showEditForm = false,
+            showPreview = false
         )
     }
     
