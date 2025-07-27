@@ -46,6 +46,17 @@ class WalletSyncWorker @AssistedInject constructor(
                     repository.updateWalletSyncTime(wallet.address, Date())
                     successCount++
                     Log.d(TAG, "Successfully synced wallet: ${wallet.address}")
+                } catch (e: IllegalStateException) {
+                    // Handle model availability issues
+                    if (e.message?.contains("No model selected") == true || 
+                        e.message?.contains("not downloaded") == true) {
+                        Log.w(TAG, "Sync failed for wallet ${wallet.address}: AI model not available. ${e.message}")
+                        // Continue with other wallets, but log this as a warning rather than error
+                        // The sync will work but without AI categorization
+                    } else {
+                        Log.e(TAG, "Failed to sync wallet ${wallet.address}: ${e.message}", e)
+                        errorCount++
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to sync wallet ${wallet.address}: ${e.message}", e)
                     errorCount++

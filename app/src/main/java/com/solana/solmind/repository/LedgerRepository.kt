@@ -186,8 +186,16 @@ class LedgerRepository @Inject constructor(
         // Use AI service to infer category and description for on-chain transactions
         val aiResult = try {
             aiService.parseOnChainTransactionWithAI(transactionText, transaction.amount)
+        } catch (e: IllegalStateException) {
+            // Re-throw model availability exceptions to be handled by sync operations
+            if (e.message?.contains("No model selected") == true || 
+                e.message?.contains("not downloaded") == true) {
+                throw e
+            }
+            // Fallback to hardcoded mapping for other AI failures
+            null
         } catch (e: Exception) {
-            // Fallback to hardcoded mapping if AI fails
+            // Fallback to hardcoded mapping for other AI failures
             null
         }
         

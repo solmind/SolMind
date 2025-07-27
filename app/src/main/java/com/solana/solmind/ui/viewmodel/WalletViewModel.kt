@@ -91,6 +91,14 @@ class WalletViewModel @Inject constructor(
                 // Update wallet sync time
                 repository.updateWalletSyncTime(address, Date())
                 
+            } catch (e: IllegalStateException) {
+                // Handle model availability issues
+                if (e.message?.contains("No model selected") == true || 
+                    e.message?.contains("not downloaded") == true) {
+                    _error.value = "Sync completed with limited AI features. Please select and download a local AI model in Settings for enhanced transaction categorization."
+                } else {
+                    _error.value = "Failed to sync wallet: ${e.message}"
+                }
             } catch (e: Exception) {
                 _error.value = "Failed to sync wallet: ${e.message}"
                 // Error handling - could update wallet status if needed
@@ -112,6 +120,14 @@ class WalletViewModel @Inject constructor(
                     try {
                         repository.syncWalletTransactions(wallet.address)
                         repository.updateWalletSyncTime(wallet.address, Date())
+                    } catch (e: IllegalStateException) {
+                        // Handle model availability issues - continue with other wallets
+                        if (e.message?.contains("No model selected") == true || 
+                            e.message?.contains("not downloaded") == true) {
+                            // Log but continue - sync will work without AI categorization
+                        } else {
+                            // Other IllegalStateExceptions should be handled
+                        }
                     } catch (e: Exception) {
                         // Error handling - could update wallet status if needed
                     }

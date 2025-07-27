@@ -112,6 +112,14 @@ class HomeViewModel @Inject constructor(
                 wallets.forEach { wallet ->
                     try {
                         repository.syncWalletTransactions(wallet.address)
+                    } catch (e: IllegalStateException) {
+                        // Handle model availability issues - continue with other wallets
+                        if (e.message?.contains("No model selected") == true || 
+                            e.message?.contains("not downloaded") == true) {
+                            // Log but continue - sync will work without AI categorization
+                        } else {
+                            // Handle other IllegalStateExceptions
+                        }
                     } catch (e: Exception) {
                         // Handle individual wallet sync errors
                         // Could emit to a UI state for error handling
