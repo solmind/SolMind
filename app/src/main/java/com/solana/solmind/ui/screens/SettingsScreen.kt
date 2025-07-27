@@ -955,19 +955,15 @@ fun ModelItem(
                 } else {
                     when (modelState.status) {
                         ModelDownloadStatus.NOT_DOWNLOADED -> {
-                            Button(
-                                onClick = { onDownloadModel(modelState.model.id) },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
+                            IconButton(
+                                onClick = { onDownloadModel(modelState.model.id) }
                             ) {
                                 Icon(
-                                     Icons.Default.Add,
-                                     contentDescription = null,
-                                     modifier = Modifier.size(16.dp)
-                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Download")
+                                    Icons.Default.GetApp,
+                                    contentDescription = "Download model",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
                         }
                     
