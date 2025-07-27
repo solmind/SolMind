@@ -11,6 +11,7 @@ import com.solana.solmind.data.manager.CurrencyPreferenceManager
 import com.solana.solmind.data.manager.CurrencyDisplayMode
 import com.solana.solmind.repository.LedgerRepository
 import com.solana.solmind.utils.CurrencyFormatter
+import com.solana.solmind.service.ModelManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,7 +59,8 @@ class AddEntryViewModel @Inject constructor(
     private val accountModeManager: AccountModeManager,
     private val currencyPreferenceManager: CurrencyPreferenceManager,
     private val aiService: com.solana.solmind.service.AIService,
-    private val chatbotService: com.solana.solmind.service.ChatbotService
+    private val chatbotService: com.solana.solmind.service.ChatbotService,
+    private val modelManager: ModelManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(AddEntryUiState())
@@ -66,6 +68,9 @@ class AddEntryViewModel @Inject constructor(
     
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    
+    private val _shouldShowModelSelection = MutableStateFlow(false)
+    val shouldShowModelSelection: StateFlow<Boolean> = _shouldShowModelSelection.asStateFlow()
     
     val currentAccountMode = accountModeManager.currentAccountMode
     val currencyDisplayMode = currencyPreferenceManager.currencyDisplayMode
@@ -368,6 +373,13 @@ class AddEntryViewModel @Inject constructor(
     }
     
     fun sendMessage(message: String) {
+        // Check if a local model is available and downloaded
+        val selectedModel = modelManager.selectedModel.value
+        if (selectedModel == null || !selectedModel.isLocal || !modelManager.isModelDownloaded(selectedModel.id)) {
+            _shouldShowModelSelection.value = true
+            return
+        }
+        
         val currentState = _uiState.value
         val userMessage = ChatMessage(content = message, isUser = true)
         
@@ -542,6 +554,10 @@ class AddEntryViewModel @Inject constructor(
     
     fun resetChat() {
         _uiState.value = AddEntryUiState()
+    }
+    
+    fun dismissModelSelection() {
+        _shouldShowModelSelection.value = false
     }
     
     override fun onCleared() {

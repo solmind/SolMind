@@ -67,6 +67,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.solana.solmind.service.SubscriptionManager
 import com.solana.solmind.service.ModelManager
+import com.solana.solmind.service.LanguageModel
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
@@ -85,6 +86,8 @@ fun AddEntryScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val currentAccountMode by viewModel.currentAccountMode.collectAsState()
     val selectedModel by modelManagerViewModel.selectedModel.collectAsState()
+    val shouldShowModelSelection by viewModel.shouldShowModelSelection.collectAsState()
+    val modelStates by modelManagerViewModel.modelStates.collectAsState()
     
     var showUpgradeDialog by remember { mutableStateOf(false) }
     
@@ -164,6 +167,32 @@ fun AddEntryScreen(
             onUpgrade = {
                 subscriptionManager.upgradeToMaster()
                 showUpgradeDialog = false
+            }
+        )
+    }
+    
+    // Model Selection Dialog
+    if (shouldShowModelSelection) {
+        ModelSelectionDialog(
+            modelManagerViewModel = modelManagerViewModel,
+            selectedModel = selectedModel,
+            modelStates = modelStates,
+            isSubscribed = true, // For now, assume subscribed for local models
+            onModelSelected = { model ->
+                modelManagerViewModel.selectModel(model)
+                viewModel.dismissModelSelection()
+            },
+            onDownloadModel = { modelId ->
+                modelManagerViewModel.downloadModel(modelId)
+            },
+            onDeleteModel = { modelId ->
+                modelManagerViewModel.deleteModel(modelId)
+            },
+            onUpgradeClicked = {
+                // Handle upgrade if needed
+            },
+            onDismiss = {
+                viewModel.dismissModelSelection()
             }
         )
     }
