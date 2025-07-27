@@ -25,6 +25,9 @@ class SettingsViewModel @Inject constructor(
     private val _exportStatus = MutableStateFlow<ExportStatus>(ExportStatus.Idle)
     val exportStatus: StateFlow<ExportStatus> = _exportStatus.asStateFlow()
     
+    private val _clearDataStatus = MutableStateFlow<ClearDataStatus>(ClearDataStatus.Idle)
+    val clearDataStatus: StateFlow<ClearDataStatus> = _clearDataStatus.asStateFlow()
+    
     fun exportTransactionsToCSV(context: Context, accountMode: AccountMode) {
         viewModelScope.launch {
             try {
@@ -104,6 +107,30 @@ class SettingsViewModel @Inject constructor(
     fun clearExportStatus() {
         _exportStatus.value = ExportStatus.Idle
     }
+    
+    fun showClearDataConfirmation() {
+        _clearDataStatus.value = ClearDataStatus.AwaitingConfirmation
+    }
+    
+    fun clearAllData() {
+        viewModelScope.launch {
+            try {
+                _clearDataStatus.value = ClearDataStatus.Loading
+                ledgerRepository.clearAllData()
+                _clearDataStatus.value = ClearDataStatus.Success("All data cleared successfully")
+            } catch (e: Exception) {
+                _clearDataStatus.value = ClearDataStatus.Error(e.message ?: "Failed to clear data")
+            }
+        }
+    }
+    
+    fun cancelClearData() {
+        _clearDataStatus.value = ClearDataStatus.Idle
+    }
+    
+    fun clearClearDataStatus() {
+        _clearDataStatus.value = ClearDataStatus.Idle
+    }
 }
 
 sealed class ExportStatus {
@@ -111,4 +138,12 @@ sealed class ExportStatus {
     object Loading : ExportStatus()
     data class Success(val message: String) : ExportStatus()
     data class Error(val message: String) : ExportStatus()
+}
+
+sealed class ClearDataStatus {
+    object Idle : ClearDataStatus()
+    object AwaitingConfirmation : ClearDataStatus()
+    object Loading : ClearDataStatus()
+    data class Success(val message: String) : ClearDataStatus()
+    data class Error(val message: String) : ClearDataStatus()
 }

@@ -35,6 +35,7 @@ import com.solana.solmind.ui.viewmodel.ModelManagerViewModel
 import com.solana.solmind.ui.viewmodel.WalletViewModel
 import com.solana.solmind.ui.viewmodel.SettingsViewModel
 import com.solana.solmind.ui.viewmodel.ExportStatus
+import com.solana.solmind.ui.viewmodel.ClearDataStatus
 import com.solana.solmind.manager.SyncManager
 import kotlinx.coroutines.launch
 
@@ -73,6 +74,7 @@ fun SettingsScreen(
     val isSubscribed by subscriptionManager.isSubscribed.collectAsState()
     val subscriptionTier by subscriptionManager.subscriptionTier.collectAsState()
     val exportStatus by settingsViewModel.exportStatus.collectAsState()
+    val clearDataStatus by settingsViewModel.clearDataStatus.collectAsState()
     
     val coroutineScope = rememberCoroutineScope()
     
@@ -82,6 +84,17 @@ fun SettingsScreen(
             is ExportStatus.Success, is ExportStatus.Error -> {
                 kotlinx.coroutines.delay(3000) // Show status for 3 seconds
                 settingsViewModel.clearExportStatus()
+            }
+            else -> {}
+        }
+    }
+    
+    // Clear clear data status after delay
+    LaunchedEffect(clearDataStatus) {
+        when (clearDataStatus) {
+            is ClearDataStatus.Success, is ClearDataStatus.Error -> {
+                kotlinx.coroutines.delay(3000) // Show status for 3 seconds
+                settingsViewModel.clearClearDataStatus()
             }
             else -> {}
         }
@@ -320,9 +333,14 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Delete,
                     title = "Clear All Data",
-                    subtitle = "Delete all ledger entries and wallets",
+                    subtitle = when (val status = clearDataStatus) {
+                        is ClearDataStatus.Loading -> "Clearing data..."
+                        is ClearDataStatus.Success -> status.message
+                        is ClearDataStatus.Error -> status.message
+                        else -> "Delete all ledger entries and wallets"
+                    },
                     onClick = {
-                        // Show confirmation dialog
+                        settingsViewModel.showClearDataConfirmation()
                     }
                 )
             }
@@ -482,6 +500,35 @@ fun SettingsScreen(
             onIntervalSelected = { interval ->
                 syncManager.setSyncInterval(interval)
                 showSyncIntervalDialog = false
+            }
+        )
+    }
+    
+    // Clear Data Confirmation Dialog
+    if (clearDataStatus is ClearDataStatus.AwaitingConfirmation) {
+        AlertDialog(
+            onDismissRequest = { settingsViewModel.cancelClearData() },
+            title = { Text("Clear All Data") },
+            text = {
+                Text(
+                    text = "This will permanently delete all ledger entries and wallets. This action cannot be undone.\n\nAre you sure you want to continue?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { settingsViewModel.clearAllData() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Delete All")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { settingsViewModel.cancelClearData() }) {
+                    Text("Cancel")
+                }
             }
         )
     }

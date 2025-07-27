@@ -2,6 +2,7 @@ package com.solana.solmind.repository
 
 import com.solana.solmind.data.database.LedgerDao
 import com.solana.solmind.data.database.SolanaWalletDao
+import com.solana.solmind.data.database.AILedgerDatabase
 import com.solana.solmind.data.model.LedgerEntry
 import com.solana.solmind.data.model.SolanaWallet
 import com.solana.solmind.data.model.TransactionCategory
@@ -18,6 +19,7 @@ import javax.inject.Singleton
 class LedgerRepository @Inject constructor(
     private val ledgerDao: LedgerDao,
     private val solanaWalletDao: SolanaWalletDao,
+    private val database: AILedgerDatabase,
     private val aiService: AIService,
     private val solanaService: SolanaService
 ) {
@@ -131,6 +133,11 @@ class LedgerRepository @Inject constructor(
     
     suspend fun updateWalletSyncTime(address: String, syncTime: Date) = 
         solanaWalletDao.updateLastSyncTime(address, syncTime)
+    
+    // Clear all data
+    suspend fun clearAllData() {
+        database.clearAllTables()
+    }
     
     // Sync Solana transactions
     suspend fun syncWalletTransactions(address: String): List<LedgerEntry> {
