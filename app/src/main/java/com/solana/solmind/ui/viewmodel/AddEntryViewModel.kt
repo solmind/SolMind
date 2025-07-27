@@ -404,7 +404,7 @@ class AddEntryViewModel @Inject constructor(
                     accountMode = accountModeManager.getCurrentAccountMode()
                 )
                 
-                // Generate AI response using the chatbot service
+                // Generate response based on transaction detection
                 val aiResponse = if (suggestion != null) {
                     // Update the transaction data
                     _uiState.value = _uiState.value.copy(
@@ -416,11 +416,8 @@ class AddEntryViewModel @Inject constructor(
                         confidence = suggestion.confidence
                     )
                     
-                    // Generate contextual response about the transaction
-                    val currentCurrencyMode = currencyPreferenceManager.getCurrencyDisplayMode()
-                    val currentAccountMode = accountModeManager.getCurrentAccountMode()
-                    val transactionContext = "I found a transaction: ${suggestion.description} for ${CurrencyFormatter.formatAmount(suggestion.amount, currentCurrencyMode, currentAccountMode)} in ${suggestion.category.getDisplayName()} category."
-                    chatbotService.generateResponse("$message\n\nContext: $transactionContext")
+                    // Reply with the transaction description instead of AI output
+                    suggestion.description
                 } else {
                     // Generate conversational response using the chatbot
                     chatbotService.generateResponse(message)
