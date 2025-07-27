@@ -33,6 +33,8 @@ import com.solana.solmind.service.SubscriptionTier
 import com.solana.solmind.service.SubscriptionBenefits
 import com.solana.solmind.ui.viewmodel.ModelManagerViewModel
 import com.solana.solmind.ui.viewmodel.WalletViewModel
+import com.solana.solmind.ui.viewmodel.SettingsViewModel
+import com.solana.solmind.ui.viewmodel.ExportStatus
 import com.solana.solmind.manager.SyncManager
 import kotlinx.coroutines.launch
 
@@ -41,7 +43,8 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     navController: NavController,
     walletViewModel: WalletViewModel = hiltViewModel(),
-    modelManagerViewModel: ModelManagerViewModel = hiltViewModel()
+    modelManagerViewModel: ModelManagerViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val themePreferenceManager = remember { ThemePreferenceManager(context) }
@@ -69,8 +72,20 @@ fun SettingsScreen(
     val modelStates by modelManagerViewModel.modelStates.collectAsState()
     val isSubscribed by subscriptionManager.isSubscribed.collectAsState()
     val subscriptionTier by subscriptionManager.subscriptionTier.collectAsState()
+    val exportStatus by settingsViewModel.exportStatus.collectAsState()
     
     val coroutineScope = rememberCoroutineScope()
+    
+    // Clear export status after success or error
+    LaunchedEffect(exportStatus) {
+        when (exportStatus) {
+            is ExportStatus.Success, is ExportStatus.Error -> {
+                kotlinx.coroutines.delay(3000) // Show status for 3 seconds
+                settingsViewModel.clearExportStatus()
+            }
+            else -> {}
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -291,9 +306,14 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Share,
                     title = "Export Data",
-                    subtitle = "Export your ledger data to CSV",
+                    subtitle = when (val status = exportStatus) {
+                        is ExportStatus.Loading -> "Exporting..."
+                        is ExportStatus.Success -> status.message
+                        is ExportStatus.Error -> "Export failed: ${status.message}"
+                        else -> "Export transactions for current ${currentAccountMode.getDisplayName()} mode to CSV"
+                    },
                     onClick = {
-                        // Handle export
+                        settingsViewModel.exportTransactionsToCSV(context, currentAccountMode)
                     }
                 )
                 
